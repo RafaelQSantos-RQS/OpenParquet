@@ -1,74 +1,87 @@
 <script lang="ts">
-	import { invoke } from '@tauri-apps/api/core';
-	import { open } from '@tauri-apps/plugin-dialog';
+	import { invoke } from "@tauri-apps/api/core";
+	import { open } from "@tauri-apps/plugin-dialog";
+	import { openUrl } from "@tauri-apps/plugin-opener";
 
-	// Importar os novos componentes
-	import Titlebar from './Titlebar.svelte';
-	import Pagination from './Pagination.svelte';
-	import DataTable, { type ColumnInfo, type DataRow } from './DataTable.svelte';
+	import { APP_INFO } from "../lib/constants";
 
-	let isDark = false;
+	import Titlebar from "./components/Titlebar/Titlebar.svelte";
+	import Pagination from "./components/Pagination/Pagination.svelte";
+	import DataTable, {
+		type ColumnInfo,
+		type DataRow,
+	} from "./components/DataTable/DataTable.svelte";
+	import MetadataPanel from "./components/MetadataPanel/MetadataPanel.svelte";
+	import Modal from "./components/Modal/Modal.svelte";
 
-    $: if (typeof document !== 'undefined') {
-        document.body.classList.toggle('dark-mode', isDark);
-    }
-    
-    function toggleTheme() {
-        isDark = !isDark;
-    }
+	let isDark = true;
+	let showAboutModal = false;
 
-	// --- Tipos de Dados ---
+	$: if (typeof document !== "undefined") {
+		document.body.classList.toggle("dark-mode", isDark);
+	}
+
+	function toggleTheme() {
+		isDark = !isDark;
+	}
+
 	interface FileMetadata {
 		file_path: string;
 		total_rows: number;
 		schema: ColumnInfo[];
 	}
 
-	// --- Estado da Aplicação (Svelte 4) ---
 	let schema: ColumnInfo[] = [];
 	let rows: DataRow[] = [];
-	let errorMsg = '';
+	let errorMsg = "";
 	let isLoading = false;
-	let selectedFile = '';
+	let selectedFile = "";
 	let totalRows = 0;
 	let currentPage = 0;
 	const pageSize = 50;
 
-	// --- Valores Derivados (Svelte 4) ---
 	$: totalPages = Math.ceil(totalRows / pageSize);
 	$: hasData = schema.length > 0;
 
-	// --- Lógica de Dados (idêntica) ---
 	async function handleOpenFile() {
 		isLoading = true;
-		errorMsg = '';
-		schema = [];
-		rows = [];
-		selectedFile = '';
-		currentPage = 0;
-		totalRows = 0;
+		errorMsg = "";
+
+		if (!hasData) {
+			schema = [];
+			rows = [];
+		}
 
 		try {
 			const file = await open({
-				title: 'Selecione um arquivo Parquet',
+				title: "Selecione um arquivo Parquet",
 				multiple: false,
-				filters: [{ name: 'Parquet', extensions: ['parquet'] }]
+				filters: [{ name: "Parquet", extensions: ["parquet"] }],
 			});
 
-			if (file && typeof file === 'string') {
-				selectedFile = file;
-				const metadata: FileMetadata = await invoke('get_file_metadata', {
-					filePath: file
-				});
+			if (file && typeof file === "string") {
+				schema = [];
+				rows = [];
+				selectedFile = "";
+				currentPage = 0;
+				totalRows = 0;
 
+				selectedFile = file;
+				const metadata: FileMetadata = await invoke(
+					"get_file_metadata",
+					{
+						filePath: file,
+					},
+				);
 				schema = metadata.schema;
 				totalRows = metadata.total_rows;
+
 				if (schema.length > 0) {
 					await loadPage(0);
 				}
 			}
 		} catch (e) {
-			console.error('Erro ao carregar metadados:', e);
+			console.error("Erro ao carregar metadados:", e);
 			errorMsg = e as string;
 		} finally {
 			isLoading = false;
@@ -78,152 +91,259 @@
 	async function loadPage(page: number) {
 		if (!selectedFile) return;
 		isLoading = true;
-		errorMsg = '';
+		errorMsg = "";
 
 		try {
-			rows = await invoke('get_page_data', {
+			rows = await invoke("get_page_data", {
 				filePath: selectedFile,
 				page: page,
-				pageSize: pageSize
+				pageSize: pageSize,
 			});
 			currentPage = page;
 		} catch (e) {
-			console.error('Erro ao carregar página:', e);
+			console.error("Erro ao carregar página:", e);
 			errorMsg = e as string;
 		} finally {
 			isLoading = false;
 		}
 	}
+
+	async function openExternal(url: string) {
+		try {
+			await openUrl(url);
+		} catch (e) {
+			console.error("Falha ao abrir link:", e);
+		}
+	}
 </script>
 
 <main class="container">
-	<Titlebar on:openfile={handleOpenFile} {isDark} on:toggle={toggleTheme} />
+	<Titlebar
+		onopenfile={handleOpenFile}
+		{isDark}
+		ontoggle={toggleTheme}
+		onabout={() => (showAboutModal = true)}
+	/>
 
 	<div class="content">
-		<button on:click={handleOpenFile} disabled={isLoading}>
-			{isLoading ? 'Carregando...' : 'Abrir Arquivo Parquet'}
-		</button>
+		{#if !hasData && !errorMsg}
+			<div class="empty-state-container">
+				<img
+					src="/welcome.svg"
+					alt="Bem-vindo ao OpenParquet"
+					class="welcome-image"
+				/>
+
+				<h2 class="welcome-title">{APP_INFO.name}</h2>
+				<p class="welcome-subtitle">
+					Visualize, analise e explore seus dados com performance.
+				</p>
+
+				<button
+					class="btn-primary large-btn"
+					on:click={handleOpenFile}
+					disabled={isLoading}
+				>
+					{#if isLoading}
+						<span class="loader"></span> Carregando...
+					{:else}
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							style="margin-right:8px"
+							><path
+								d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+							/><polyline points="17 8 12 3 7 8" /><line
+								x1="12"
+								y1="3"
+								x2="12"
+								y2="15"
+							/></svg
+						>
+						Abrir Arquivo Parquet
+					{/if}
+				</button>
+			</div>
+		{/if}
 
 		{#if errorMsg}
-			<p class="error">Erro: {errorMsg}</p>
+			<div class="actions-bar">
+				<div class="error-banner">
+					<strong>Erro:</strong>
+					{errorMsg}
+				</div>
+				<button class="btn-primary" on:click={handleOpenFile}
+					>Tentar Novamente</button
+				>
+			</div>
 		{/if}
 
 		{#if hasData}
-			<div class="metadata">
-				<span><strong>Arquivo:</strong> {selectedFile}</span>
-				<span><strong>Total de Linhas:</strong> {totalRows}</span>
+			<MetadataPanel filePath={selectedFile} {totalRows} {schema} />
+
+			<div class="flex-table-container">
+				<DataTable
+					{schema}
+					{rows}
+					startRowIndex={currentPage * pageSize}
+				/>
 			</div>
 
-			<Pagination
-				{currentPage}
-				{totalPages}
-				{isLoading}
-				rowsLength={rows.length}
-				{pageSize}
-				on:prev={() => loadPage(currentPage - 1)}
-				on:next={() => loadPage(currentPage + 1)}
-			/>
-
-			<DataTable {schema} {rows} />
+			<div class="footer-actions">
+				<Pagination
+					{currentPage}
+					{totalPages}
+					{isLoading}
+					rowsLength={rows.length}
+					{pageSize}
+					onprev={() => loadPage(currentPage - 1)}
+					onnext={() => loadPage(currentPage + 1)}
+				/>
+			</div>
 		{/if}
 	</div>
+
+	{#if showAboutModal}
+		<Modal
+			title={`Sobre o ${APP_INFO.name}`}
+			onclose={() => (showAboutModal = false)}
+		>
+			<div class="about-content">
+				<img
+					src="/welcome.svg"
+					alt="Logo"
+					style="height: 80px; margin-bottom: 1rem;"
+				/>
+
+				<p
+					style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.2rem;"
+				>
+					{APP_INFO.name}
+					<span style="font-weight:400; opacity: 0.7;"
+						>{APP_INFO.version}</span
+					>
+				</p>
+
+				<a
+					href={APP_INFO.social.githubRepo}
+					class="repo-link"
+					on:click|preventDefault={() =>
+						openExternal(APP_INFO.social.githubRepo)}
+				>
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						><path
+							d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+						></path></svg
+					>
+					Ver código fonte no GitHub
+				</a>
+
+				<div class="divider"></div>
+
+				<p class="dev-info">
+					Desenvolvido com 💚 por <strong
+						>{APP_INFO.author.name}</strong
+					><br />
+					<span class="tech-stack">{APP_INFO.author.stack}</span>
+				</p>
+
+				<div class="social-links">
+					<a
+						href={APP_INFO.social.githubProfile}
+						class="social-btn github"
+						aria-label="GitHub"
+						on:click|preventDefault={() =>
+							openExternal(APP_INFO.social.githubProfile)}
+					>
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path
+								d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"
+							></path></svg
+						>
+					</a>
+
+					<a
+						href={APP_INFO.social.linkedin}
+						class="social-btn linkedin"
+						aria-label="LinkedIn"
+						on:click|preventDefault={() =>
+							openExternal(APP_INFO.social.linkedin)}
+					>
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path
+								d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
+							/><rect x="2" y="9" width="4" height="12" /><circle
+								cx="4"
+								cy="4"
+								r="2"
+							/></svg
+						>
+					</a>
+
+					<a
+						href={APP_INFO.social.email}
+						class="social-btn email"
+						aria-label="Email"
+						on:click|preventDefault={() =>
+							openExternal(APP_INFO.social.email)}
+					>
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path
+								d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+							/><polyline points="22,6 12,13 2,6" /></svg
+						>
+					</a>
+				</div>
+
+				<a
+					href={APP_INFO.attribution.storyset.url}
+					class="attribution"
+					on:click|preventDefault={() =>
+						openExternal(APP_INFO.attribution.storyset.url)}
+				>
+					{APP_INFO.attribution.storyset.text}
+				</a>
+			</div>
+		</Modal>
+	{/if}
 </main>
 
-<style>
-    :global(body) {
-        --color-background: #ffffff;
-        --color-text: #333333;
-        --color-subtle-text: #666666;
-        --color-border: #eeeeee;
-        --color-hover: #e5e5e5;
-        --color-titlebar-bg: #f7f7f7;
-        --color-metadata-bg: #f4f4ff;
-        --color-table-row-even: #fdfdfd;
-        --color-table-header-bg: #f9f9f9;
-        
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-            'Open Sans', 'Helvetica Neue', sans-serif;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: var(--color-background); /* Usando variável */
-    }
-
-    :global(body.dark-mode) {
-        /* Tema ESCURO (Substituindo variáveis) */
-        --color-background: #1e1e1e;
-        --color-text: #cccccc;
-        --color-subtle-text: #999999;
-        --color-border: #444444;
-        --color-hover: #3c3c3c;
-        --color-titlebar-bg: #252526;
-        --color-metadata-bg: #303030;
-        --color-table-row-even: #212121;
-        --color-table-header-bg: #2d2d2d;
-    }
-
-    /* --- 2. ESTILOS GLOBAIS --- */
-    :global(html),
-    :global(body) {
-        height: 100%;
-    }
-
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: var(--color-background);
-    }
-    ::-webkit-scrollbar-thumb {
-        background: var(--color-subtle-text);
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--color-text);
-    }
-
-    :global(button:focus),
-    :global(button:focus-visible) {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.5);
-    }
-
-    /* --- 3. ESTILOS DA PÁGINA (Usando Variáveis) --- */
-    .container {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 0;
-        padding: 0;
-        margin: 0;
-        background-color: var(--color-background); /* Usando variável */
-        box-sizing: border-box;
-    }
-
-    .content {
-        padding: 1.5em;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-height: 0;
-    }
-
-    .error {
-        color: red;
-        margin-top: 1em;
-        text-align: left;
-    }
-
-    .metadata {
-        text-align: left;
-        color: var(--color-text); /* Usando variável */
-        background-color: var(--color-metadata-bg); /* Usando variável */
-        padding: 0.5em 1em;
-        border-radius: 4px;
-        margin-top: 1.5em;
-        display: flex;
-        justify-content: space-between;
-        flex-shrink: 0;
-    }
-</style>
+<style src="./page.css"></style>

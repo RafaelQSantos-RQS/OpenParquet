@@ -1,0 +1,160 @@
+.titlebar {
+    height: 32px;
+    background: var(--color-bg-surface);
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    position: relative;
+    user-select: none;
+    transition: background-color 0.3s;
+    padding-left: 8px; 
+}
+
+.titlebar.maximized {
+    border-radius: 0;
+}
+
+.titlebar-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    pointer-events: none;
+    font-family: inherit;
+    z-index: 0;
+}
+
+.window-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    opacity: 0.9;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+}
+
+.titlebar-menu-container {
+    position: relative;
+    z-index: 20;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.titlebar-menu {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding-left: 0;
+}
+
+.menu-button {
+    background: none;
+    border: none;
+    padding: 0 10px;
+    margin: 0 2px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--color-text-main);
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.menu-button:hover,
+.menu-button.open {
+    background: var(--color-bg-subtle);
+    color: var(--color-brand-accent);
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    min-width: 180px;
+    padding: 4px;
+    z-index: 30;
+}
+
+.menu-dropdown.theme-menu { left: 70px; }
+.menu-dropdown.help-menu { left: 130px; }
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--color-text-main);
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.1s;
+}
+
+.menu-item:hover {
+    background: var(--color-brand-primary);
+    color: #ffffff;
+}
+
+.menu-item.active {
+    color: var(--color-brand-accent);
+    font-weight: 600;
+}
+.menu-item.active:hover { color: #ffffff; }
+
+.titlebar-controls {
+    display: flex;
+    height: 100%;
+    margin-left: auto;
+    z-index: 20;
+}
+
+.titlebar-button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 46px;
+    height: 100%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.titlebar-button svg {
+    fill: var(--color-text-muted);
+    transition: fill 0.2s;
+}
+
+.titlebar-button:hover {
+    background: var(--color-bg-subtle);
+}
+.titlebar-button:hover svg {
+    fill: var(--color-text-main);
+}
+
+.titlebar-button.close:hover {
+    background: var(--color-error);
+}
+.titlebar-button.close:hover svg {
+    fill: #ffffff;
+}
