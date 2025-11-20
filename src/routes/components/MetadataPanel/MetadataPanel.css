@@ -7,10 +7,6 @@
     transition: border-color 0.2s;
 }
 
-.meta-panel:focus-within {
-    border-color: var(--color-info-main);
-}
-
 .meta-header {
     width: 100%;
     display: flex;

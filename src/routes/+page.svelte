@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
 	import { open } from "@tauri-apps/plugin-dialog";
-	import { openUrl } from "@tauri-apps/plugin-opener";
-
-	import { APP_INFO } from "../lib/constants";
+	import { listen } from "@tauri-apps/api/event";
+	import { onMount, onDestroy } from "svelte";
+	import { APP_INFO } from "$lib/constants";
 
 	import Titlebar from "./components/Titlebar/Titlebar.svelte";
 	import Pagination from "./components/Pagination/Pagination.svelte";
@@ -16,6 +16,10 @@
 
 	let isDark = true;
 	let showAboutModal = false;
+	let isDragging = false;
+	let unlistenDrop: () => void;
+	let unlistenHover: () => void;
+	let unlistenCancel: () => void;
 
 	$: if (typeof document !== "undefined") {
 		document.body.classList.toggle("dark-mode", isDark);
@@ -43,15 +47,64 @@
 	$: totalPages = Math.ceil(totalRows / pageSize);
 	$: hasData = schema.length > 0;
 
-	async function handleOpenFile() {
+	onMount(async () => {
+		unlistenDrop = await listen("tauri://drag-drop", (event: any) => {
+			isDragging = false;
+			if (event.payload.paths && event.payload.paths.length > 0) {
+				const path = event.payload.paths[0];
+				if (path.endsWith(".parquet")) {
+					loadParquetFile(path);
+				} else {
+					errorMsg = "Por favor, solte apenas arquivos .parquet";
+				}
+			}
+		});
+
+		unlistenHover = await listen("tauri://drag-enter", () => {
+			isDragging = true;
+		});
+
+		unlistenCancel = await listen("tauri://drag-leave", () => {
+			isDragging = false;
+		});
+	});
+
+	onDestroy(() => {
+		if (unlistenDrop) unlistenDrop();
+		if (unlistenHover) unlistenHover();
+		if (unlistenCancel) unlistenCancel();
+	});
+
+	async function loadParquetFile(filePath: string) {
 		isLoading = true;
 		errorMsg = "";
 
-		if (!hasData) {
-			schema = [];
-			rows = [];
-		}
+		// Reset limpo
+		schema = [];
+		rows = [];
+		selectedFile = filePath;
+		currentPage = 0;
+		totalRows = 0;
 
+		try {
+			const metadata: FileMetadata = await invoke("get_file_metadata", {
+				filePath: filePath,
+			});
+			schema = metadata.schema;
+			totalRows = metadata.total_rows;
+
+			if (schema.length > 0) {
+				await loadPage(0);
+			}
+		} catch (e) {
+			console.error("Erro ao carregar arquivo:", e);
+			errorMsg = e as string;
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function handleOpenFile() {
 		try {
 			const file = await open({
 				title: "Selecione um arquivo Parquet",
@@ -60,31 +113,10 @@
 			});
 
 			if (file && typeof file === "string") {
-				schema = [];
-				rows = [];
-				selectedFile = "";
-				currentPage = 0;
-				totalRows = 0;
-
-				selectedFile = file;
-				const metadata: FileMetadata = await invoke(
-					"get_file_metadata",
-					{
-						filePath: file,
-					},
-				);
-				schema = metadata.schema;
-				totalRows = metadata.total_rows;
-
-				if (schema.length > 0) {
-					await loadPage(0);
-				}
+				await loadParquetFile(file);
 			}
 		} catch (e) {
-			console.error("Erro ao carregar metadados:", e);
 			errorMsg = e as string;
-		} finally {
-			isLoading = false;
 		}
 	}
 
@@ -107,14 +139,6 @@
 			isLoading = false;
 		}
 	}
-
-	async function openExternal(url: string) {
-		try {
-			await openUrl(url);
-		} catch (e) {
-			console.error("Falha ao abrir link:", e);
-		}
-	}
 </script>
 
 <main class="container">
@@ -126,6 +150,32 @@
 	/>
 
 	<div class="content">
+		{#if isDragging}
+			<div class="drop-overlay">
+				<div class="drop-message">
+					<svg
+						width="48"
+						height="48"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						><path
+							d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+						/><polyline points="17 8 12 3 7 8" /><line
+							x1="12"
+							y1="3"
+							x2="12"
+							y2="15"
+						/></svg
+					>
+					<span>Solte o arquivo Parquet aqui</span>
+				</div>
+			</div>
+		{/if}
+
 		{#if !hasData && !errorMsg}
 			<div class="empty-state-container">
 				<img
@@ -136,7 +186,7 @@
 
 				<h2 class="welcome-title">{APP_INFO.name}</h2>
 				<p class="welcome-subtitle">
-					Visualize, analise e explore seus dados com performance.
+					Arraste um arquivo ou clique abaixo para começar.
 				</p>
 
 				<button
@@ -179,7 +229,7 @@
 					{errorMsg}
 				</div>
 				<button class="btn-primary" on:click={handleOpenFile}
-					>Tentar Novamente</button
+					>Tentar Outro Arquivo</button
 				>
 			</div>
 		{/if}
@@ -232,9 +282,8 @@
 
 				<a
 					href={APP_INFO.social.githubRepo}
+					target="_blank"
 					class="repo-link"
-					on:click|preventDefault={() =>
-						openExternal(APP_INFO.social.githubRepo)}
 				>
 					<svg
 						width="16"
@@ -264,10 +313,9 @@
 				<div class="social-links">
 					<a
 						href={APP_INFO.social.githubProfile}
+						target="_blank"
 						class="social-btn github"
-						aria-label="GitHub"
-						on:click|preventDefault={() =>
-							openExternal(APP_INFO.social.githubProfile)}
+						aria-label="Perfil no GitHub"
 					>
 						<svg
 							width="24"
@@ -286,10 +334,9 @@
 
 					<a
 						href={APP_INFO.social.linkedin}
+						target="_blank"
 						class="social-btn linkedin"
-						aria-label="LinkedIn"
-						on:click|preventDefault={() =>
-							openExternal(APP_INFO.social.linkedin)}
+						aria-label="Perfil no LinkedIn"
 					>
 						<svg
 							width="24"
@@ -313,9 +360,7 @@
 					<a
 						href={APP_INFO.social.email}
 						class="social-btn email"
-						aria-label="Email"
-						on:click|preventDefault={() =>
-							openExternal(APP_INFO.social.email)}
+						aria-label="Enviar Email"
 					>
 						<svg
 							width="24"
@@ -335,9 +380,8 @@
 
 				<a
 					href={APP_INFO.attribution.storyset.url}
+					target="_blank"
 					class="attribution"
-					on:click|preventDefault={() =>
-						openExternal(APP_INFO.attribution.storyset.url)}
 				>
 					{APP_INFO.attribution.storyset.text}
 				</a>
