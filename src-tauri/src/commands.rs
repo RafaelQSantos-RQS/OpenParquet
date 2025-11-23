@@ -1,4 +1,4 @@
-// src-tauri/commands.rs
+// src-tauri/src/commands.rs
 use crate::db_logic;
 use crate::models::{ColumnInfo, FileMetadata, PageData};
 use duckdb::Connection;
@@ -12,7 +12,6 @@ pub async fn load_parquet_schema(file_path: String) -> Result<Vec<ColumnInfo>, S
     println!("Backend: Lendo esquema de {}", file_path);
     let conn = Connection::open_in_memory().map_err(db_err)?;
     
-    // Chama a lógica de DB
     db_logic::get_schema_from_db(&conn, &file_path).map_err(db_err)
 }
 
@@ -21,6 +20,8 @@ pub async fn get_page_data(
     file_path: String,
     page: usize,
     page_size: usize,
+    sort_col: Option<String>,
+    sort_order: Option<String>,
 ) -> Result<PageData, String> {
     
     println!("Backend: Lendo dados para: {}, página {}", file_path, page);
@@ -30,8 +31,16 @@ pub async fn get_page_data(
     let schema = db_logic::get_schema_from_db(&conn, &file_path).map_err(db_err)?;
     let col_names: Vec<String> = schema.into_iter().map(|col| col.name).collect();
     
-    let data = db_logic::get_page_data_from_db(&conn, &file_path, col_names, page_size, offset)
-        .map_err(db_err)?;
+    let data = db_logic::get_page_data_from_db(
+        &conn, 
+        &file_path, 
+        col_names, 
+        page_size, 
+        offset,
+        sort_col,
+        sort_order
+    )
+    .map_err(db_err)?;
     
     println!("Backend: Retornando {} linhas para o Svelte.", data.len());
     Ok(data)

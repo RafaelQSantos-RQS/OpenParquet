@@ -1,4 +1,4 @@
-// src-tauri/db_logic.rs
+// src-tauri/src/db_logic.rs
 use crate::models::{ColumnInfo, PageData};
 use duckdb::types::ValueRef;
 use duckdb::{Connection, Result};
@@ -31,6 +31,8 @@ pub fn get_page_data_from_db(
     col_names: Vec<String>,
     limit: usize,
     offset: usize,
+    sort_col: Option<String>,
+    sort_order: Option<String>,
 ) -> Result<PageData> {
     
     let select_casts = col_names
@@ -39,9 +41,16 @@ pub fn get_page_data_from_db(
         .collect::<Vec<String>>()
         .join(", ");
 
+    let order_clause = if let (Some(col), Some(order)) = (sort_col, sort_order) {
+        let direction = if order.to_uppercase() == "DESC" { "DESC" } else { "ASC" };
+        format!("ORDER BY \"{}\" {}", col, direction)
+    } else {
+        String::new()
+    };
+
     let sql = format!(
-        "SELECT {} FROM '{}' LIMIT {} OFFSET {}",
-        select_casts, file_path, limit, offset
+        "SELECT {} FROM '{}' {} LIMIT {} OFFSET {}",
+        select_casts, file_path, order_clause, limit, offset
     );
 
     let mut stmt = conn.prepare(&sql)?;
