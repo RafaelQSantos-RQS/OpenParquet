@@ -87,7 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'OpenParquet v__VERSION__'
+          releaseName: ${{ github.ref_name }}
           releaseBody: ${{ steps.build_changelog.outputs.changelog || 'Veja os assets abaixo para baixar e instalar.' }}
           releaseDraft: true
           prerelease: false

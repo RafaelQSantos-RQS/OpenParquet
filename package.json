@@ -1,6 +1,6 @@
 {
   "name": "openparquet",
-  "version": "0.1.0",
+  "version": "0.0.2",
   "description": "",
   "type": "module",
   "scripts": {
@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "version": "node -e \"const fs = require('fs'); const t = 'src-tauri/tauri.conf.json'; const c = JSON.parse(fs.readFileSync(t)); c.version = process.env.npm_package_version; fs.writeFileSync(t, JSON.stringify(c, null, 2));\" && git add src-tauri/tauri.conf.json"
   },
   "license": "MIT",
   "dependencies": {
