@@ -4,6 +4,7 @@
 	import { listen } from "@tauri-apps/api/event";
 	import { onMount, onDestroy } from "svelte";
 	import { APP_INFO } from "$lib/constants";
+	import { openUrl } from "@tauri-apps/plugin-opener";
 
 	import Titlebar from "./components/Titlebar/Titlebar.svelte";
 	import Pagination from "./components/Pagination/Pagination.svelte";
@@ -137,6 +138,14 @@
 			errorMsg = e as string;
 		} finally {
 			isLoading = false;
+		}
+	}
+
+	async function openExternal(url: string) {
+		try {
+			await openUrl(url);
+		} catch (e) {
+			console.error("Falha ao abrir link:", e);
 		}
 	}
 </script>
@@ -282,8 +291,9 @@
 
 				<a
 					href={APP_INFO.social.githubRepo}
-					target="_blank"
 					class="repo-link"
+					on:click|preventDefault={() =>
+						openExternal(APP_INFO.social.githubRepo)}
 				>
 					<svg
 						width="16"
@@ -313,9 +323,10 @@
 				<div class="social-links">
 					<a
 						href={APP_INFO.social.githubProfile}
-						target="_blank"
 						class="social-btn github"
 						aria-label="Perfil no GitHub"
+						on:click|preventDefault={() =>
+							openExternal(APP_INFO.social.githubProfile)}
 					>
 						<svg
 							width="24"
@@ -334,9 +345,10 @@
 
 					<a
 						href={APP_INFO.social.linkedin}
-						target="_blank"
 						class="social-btn linkedin"
 						aria-label="Perfil no LinkedIn"
+						on:click|preventDefault={() =>
+							openExternal(APP_INFO.social.linkedin)}
 					>
 						<svg
 							width="24"
@@ -361,6 +373,8 @@
 						href={APP_INFO.social.email}
 						class="social-btn email"
 						aria-label="Enviar Email"
+						on:click|preventDefault={() =>
+							openExternal(APP_INFO.social.email)}
 					>
 						<svg
 							width="24"
@@ -380,8 +394,9 @@
 
 				<a
 					href={APP_INFO.attribution.storyset.url}
-					target="_blank"
 					class="attribution"
+					on:click|preventDefault={() =>
+						openExternal(APP_INFO.attribution.storyset.url)}
 				>
 					{APP_INFO.attribution.storyset.text}
 				</a>
