@@ -23,12 +23,13 @@
 
 Estamos trabalhando ativamente para tornar o OpenParquet a ferramenta definitiva. Aqui está o que vem por aí:
 
-- [ ] **Ordenação de Colunas:** Clique no cabeçalho para ordenar (ASC/DESC).
-- [ ] **Modo SQL:** Interface para rodar queries SQL personalizadas (via DuckDB) nos dados carregados.
+- [x] **Ordenação de Colunas:** Ordenação nativa via SQL ao clicar no cabeçalho.
+- [ ] **Preferências:** Salvar tema (Dark/Light) e tamanho da janela entre sessões.
+- [ ] **Histórico:** Lista de arquivos abertos recentemente na tela inicial.
+- [ ] **Modo SQL:** Interface para rodar queries SQL personalizadas nos dados carregados.
 - [ ] **Filtros Rápidos:** Barra de busca global e filtros por coluna.
 - [ ] **Exportação:** Exportar visualização atual para CSV ou JSON.
-- [ ] **Histórico:** Lista de arquivos abertos recentemente.
-- [ ] **Documentação Linux:** Melhorar guia de instalação e dependências para .deb/.AppImage.
+- [ ] **Abrir Pasta:** Carregar múltiplos arquivos Parquet de uma pasta como uma única tabela.
 - [ ] **Testes E2E:** Implementar testes automatizados de interface.
 
 > Quer ajudar a implementar alguma dessas features? Confira nosso [Guia de Contribuição](CONTRIBUTING.md)!

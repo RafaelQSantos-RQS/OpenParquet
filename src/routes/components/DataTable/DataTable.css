@@ -1,14 +1,14 @@
 .table-wrapper {
     width: 100%;
-    height: 100%;       /* Ocupa a altura do pai (.flex-table-container) */
-    overflow: auto;     /* O scroll acontece AQUI */
+    height: 100%;
+    overflow: auto;
     background-color: var(--color-bg-app);
-    display: block;     /* Garante comportamento de bloco para scroll */
+    display: block;
 }
 
 .data-table {
     width: 100%;
-    border-collapse: separate; /* Necessário para sticky headers */
+    border-collapse: separate;
     border-spacing: 0;
     text-align: left;
     white-space: nowrap;
@@ -30,7 +30,6 @@
 .data-table th {
     background-color: var(--color-table-header-bg);
     color: var(--color-brand-accent);
-    /* Fixar cabeçalho no topo */
     position: sticky;
     top: 0;
     z-index: 10; 
@@ -39,7 +38,76 @@
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     border-bottom: 2px solid var(--color-border);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Sombra leve no header */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    
+    cursor: pointer; 
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.data-table th:hover {
+    background-color: var(--color-bg-subtle);
+}
+
+.th-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.col-type {
+    font-size: 0.65rem;
+    font-weight: normal;
+    opacity: 0.6;
+    margin-top: 4px;
+    text-transform: none;
+}
+
+.sort-icon {
+    display: flex;
+    align-items: center;
+}
+
+.sort-icon.active {
+    color: var(--color-brand-primary);
+}
+
+:global(body:not(.dark-mode)) .sort-icon.active {
+    color: var(--color-brand-primary); 
+}
+
+.sort-icon.ghost {
+    opacity: 0; 
+    transition: opacity 0.2s;
+    color: var(--color-text-muted);
+}
+
+.data-table th:hover .sort-icon.ghost {
+    opacity: 0.4;
+}
+
+.data-table th.row-number-col {
+    width: 50px;
+    min-width: 50px;
+    text-align: center;
+    color: var(--color-text-muted);
+    border-right: 2px solid var(--color-border);
+    z-index: 11;
+    cursor: default;
+}
+.data-table th.row-number-col:hover {
+    background-color: var(--color-table-header-bg);
+}
+
+.data-table td.row-number-col {
+    text-align: center;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    background-color: var(--color-bg-surface);
+    border-right: 2px solid var(--color-border);
+    user-select: none;
 }
 
 .data-table tbody tr {
@@ -57,25 +125,4 @@
 
 .data-table td {
     color: var(--color-text-main);
-}
-
-/* Cabeçalho da coluna # */
-.data-table th.row-number-col {
-    width: 50px;           /* Largura fixa e pequena */
-    min-width: 50px;
-    text-align: center;
-    color: var(--color-text-muted); /* Cor discreta */
-    border-right: 2px solid var(--color-border); /* Divisão visual mais forte */
-    z-index: 11; /* Fica acima dos outros headers se usar sticky lateral */
-}
-
-/* Células da coluna # */
-.data-table td.row-number-col {
-    text-align: center;
-    font-family: 'Consolas', 'Monaco', monospace; /* Fonte de código */
-    font-size: 0.8rem;
-    color: var(--color-text-muted);
-    background-color: var(--color-bg-surface); /* Fundo levemente diferente da linha */
-    border-right: 2px solid var(--color-border);
-    user-select: none; /* Impede seleção acidental ao copiar dados */
 }
