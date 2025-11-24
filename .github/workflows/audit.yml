@@ -1,8 +1,6 @@
 name: Audit Code
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
