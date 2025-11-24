@@ -1,20 +1,26 @@
+/* --- 1. DESIGN TOKENS (Cores Base / Dark Mode) --- */
 :global(:root) {
+    /* Estrutura & Fundo */
     --color-bg-app: #0d1117;       
     --color-bg-surface: #161b22;   
     --color-bg-subtle: #333333;    
     
+    /* Bordas */
     --color-border: #30363d;
     --color-border-active: #666666;
 
+    /* Tipografia */
     --color-text-main: #ffffff;
     --color-text-muted: #999999;
     --color-text-inverse: #000240;
 
+    /* MARCA */
     --color-brand-primary: #08872B; 
     --color-brand-hover: #104C35;
     --color-brand-accent: #5FED83;
     --color-brand-subtle: #BFFFD1;
 
+    /* FUNCIONAL */
     --color-info-main: #3094FF;
     --color-info-bg: #001C4D;
     --color-link: #9EECFF;
@@ -23,11 +29,16 @@
     --color-error: #BD2C00;
     --color-success: #6CC644;
 
+    /* Tabelas */
     --color-table-header-bg: #161b22;
     --color-table-row-even: #0d1117;
     --color-table-row-hover: #1f2428;
+    
+    /* Drag & Drop Overlay */
+    --overlay-bg: rgba(13, 17, 23, 0.85);
 }
 
+/* --- TEMA CLARO (Override) --- */
 :global(body:not(.dark-mode)) {
     --color-bg-app: #ffffff;
     --color-bg-surface: #f6f8fa;
@@ -45,6 +56,8 @@
     --color-table-header-bg: #f6f8fa;
     --color-table-row-even: #ffffff;
     --color-table-row-hover: #f0f3f6;
+    
+    --overlay-bg: rgba(255, 255, 255, 0.85);
 }
 
 :global(body) {
@@ -92,9 +105,10 @@
     display: flex;
     flex-direction: column;
     padding: 1rem;
-    gap: 0.8rem;
+    gap: 0.5rem; 
     min-height: 0;
     overflow: hidden;
+    position: relative;
 }
 
 .actions-bar {
@@ -118,7 +132,7 @@
 .footer-actions {
     flex-shrink: 0;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     padding-top: 0.2rem;
 }
 
@@ -165,6 +179,92 @@
     background-color: #ffebe9;
     color: #cf222e;
     border-color: #ff818266;
+}
+
+.data-header-row {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center; 
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap-reverse; 
+}
+
+.data-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-shrink: 0; 
+    margin-right: auto;
+}
+
+.metadata-wrapper {
+    flex: 1;
+    min-width: 300px; 
+}
+
+.btn-tool {
+    background-color: var(--color-bg-surface);
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border);
+    
+    padding: 0.75rem 1rem; 
+    
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-height: 42px; 
+    line-height: 1.2;
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.btn-tool:hover {
+    background-color: var(--color-bg-subtle);
+    border-color: var(--color-brand-primary);
+    color: var(--color-brand-primary);
+}
+
+.sql-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: var(--color-bg-surface);
+    padding: 0.65rem 0.65rem 0.65rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--color-data-bg);
+    min-height: 42px;
+    box-sizing: border-box;
+}
+
+.sql-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--color-data-accent);
+    font-family: monospace;
+    font-weight: 600;
+}
+
+.btn-exit-sql {
+    background-color: var(--color-error);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.btn-exit-sql:hover {
+    opacity: 0.9;
 }
 
 .empty-state-container {
@@ -224,21 +324,6 @@
     align-items: center;
 }
 
-.repo-link {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--color-link);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: opacity 0.2s;
-}
-.repo-link:hover {
-    opacity: 0.8;
-    text-decoration: underline;
-}
-
 .divider {
     width: 100%;
     height: 1px;
@@ -273,6 +358,7 @@
     border-radius: 50%;
     background: transparent;
     border: 1px solid transparent;
+    cursor: pointer;
 }
 
 .social-btn:hover {
@@ -282,9 +368,20 @@
 
 .social-btn.github:hover { color: #ffffff; }
 :global(body:not(.dark-mode)) .social-btn.github:hover { color: #333; }
-
 .social-btn.linkedin:hover { color: #0077b5; }
 .social-btn.email:hover { color: #EA4335; }
+
+.repo-link {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--color-link);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.repo-link:hover { text-decoration: underline; }
 
 .attribution {
     margin-top: 2.5rem;
@@ -293,12 +390,9 @@
     text-decoration: none;
     opacity: 0.5;
     display: block;
+    cursor: pointer;
 }
-
-.attribution:hover {
-    opacity: 1;
-    text-decoration: underline;
-}
+.attribution:hover { opacity: 1; text-decoration: underline; }
 
 .drop-overlay {
     position: fixed;
@@ -306,8 +400,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(13, 17, 23, 0.85); /* Fundo escuro semi-transparente */
-    z-index: 9999; /* Fica acima de tudo */
+    background-color: var(--overlay-bg);
+    z-index: 9999;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -343,8 +437,4 @@
 @keyframes bounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
-}
-
-:global(body:not(.dark-mode)) .drop-overlay {
-    background-color: rgba(255, 255, 255, 0.85);
 }

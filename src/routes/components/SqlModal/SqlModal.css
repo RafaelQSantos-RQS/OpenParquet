@@ -1,0 +1,85 @@
+/* src/routes/components/SqlModal/SqlModal.css */
+
+.sql-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.hint {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+code {
+    background: var(--color-bg-subtle);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--color-brand-accent);
+    font-family: monospace;
+    font-weight: bold;
+}
+
+textarea {
+    background-color: var(--color-bg-app);
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 1rem;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.95rem;
+    min-height: 200px;
+    flex: 1;
+    
+    resize: vertical; 
+    outline: none;
+    line-height: 1.5;
+}
+
+textarea:focus {
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 1px var(--color-brand-primary);
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: auto; /* Empurra para o final se sobrar espaço */
+    padding-top: 0.5rem;
+}
+
+/* Botões */
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--color-bg-subtle);
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--color-brand-primary);
+    color: #ffffff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-brand-hover);
+}
