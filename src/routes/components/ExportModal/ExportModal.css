@@ -1,0 +1,120 @@
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 400px;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.format-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.format-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--color-bg-app);
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-text-main);
+}
+
+.format-btn:hover {
+    border-color: var(--color-brand-primary);
+    background-color: var(--color-bg-subtle);
+}
+
+.format-btn.selected {
+    border-color: var(--color-brand-primary);
+    background-color: rgba(8, 135, 43, 0.1);
+    color: var(--color-brand-accent);
+}
+
+.format-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.icon-csv, .icon-json, .icon-parquet {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+.radio-item:hover {
+    background-color: var(--color-bg-subtle);
+}
+
+.radio-item input {
+    accent-color: var(--color-brand-primary);
+    width: 16px;
+    height: 16px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1rem;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.btn-secondary:hover { background: var(--color-bg-subtle); }
+
+.btn-primary {
+    background-color: var(--color-brand-primary);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-primary:hover { background-color: var(--color-brand-hover); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }

@@ -12,6 +12,7 @@ pub fn run() {
             commands::get_page_data,
             commands::get_file_metadata,
             commands::run_sql,
+            commands::export_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

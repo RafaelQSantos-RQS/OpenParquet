@@ -28,7 +28,7 @@ Estamos trabalhando ativamente para tornar o OpenParquet a ferramenta definitiva
 - [ ] **Histórico:** Lista de arquivos abertos recentemente na tela inicial.
 - [x] **Modo SQL:** Interface para rodar queries SQL personalizadas nos dados carregados.
 - [ ] **Filtros Rápidos:** Barra de busca global e filtros por coluna.
-- [ ] **Exportação:** Exportar visualização atual para CSV ou JSON.
+- [x] **Exportação:** Exportar visualização atual para CSV ou JSON.
 - [ ] **Abrir Pasta:** Carregar múltiplos arquivos Parquet de uma pasta como uma única tabela.
 - [ ] **Testes E2E:** Implementar testes automatizados de interface.
 
