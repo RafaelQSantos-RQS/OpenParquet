@@ -163,3 +163,30 @@ pub fn exec_custom_query(
         total_rows,
     })
 }
+
+pub fn export_query_to_file(
+    conn: &Connection,
+    file_path: &str,
+    query: &str,
+    output_path: &str,
+    format: &str
+) -> Result<()> {
+    let view_sql = format!("CREATE OR REPLACE VIEW t AS SELECT * FROM '{}'",file_path);
+    conn.execute(&view_sql, [])?;
+
+    let (fmt_cmd, opts) = match format.to_uppercase().as_str() {
+        "JSON" => ("JSON", "ARRAY true"),
+        "PARQUET" => ("PARQUET", "COMPRESSION 'SNAPPY'"),
+        _ => ("CSV", "HEADER true, DELIMITER ','"),
+    };
+
+    let clean_query = query.trim().trim_end_matches(";");
+
+    let copy_sql = format!(
+        "COPY ({}) TO '{}' (FORMAT {},{});",
+        clean_query, output_path, fmt_cmd, opts
+    );
+
+    conn.execute(&copy_sql, [])?;
+    Ok(())
+}

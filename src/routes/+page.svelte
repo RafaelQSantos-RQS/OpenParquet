@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
-	import { open } from "@tauri-apps/plugin-dialog";
+	import { open, save } from "@tauri-apps/plugin-dialog";
 	import { listen } from "@tauri-apps/api/event";
 	import { onMount, onDestroy } from "svelte";
 	import { openUrl } from "@tauri-apps/plugin-opener";
@@ -16,11 +16,14 @@
 	import MetadataPanel from "./components/MetadataPanel/MetadataPanel.svelte";
 	import Modal from "./components/Modal/Modal.svelte";
 	import SqlModal from "./components/SqlModal/SqlModal.svelte";
+	import ExportModal from "./components/ExportModal/ExportModal.svelte";
 
 	// --- ESTADO GLOBAL ---
 	let isDark = true;
 	let showAboutModal = false;
 	let showSqlModal = false;
+	let showExportModal = false;
+	let isExporting = false;
 
 	// --- ESTADO DRAG & DROP ---
 	let isDragging = false;
@@ -39,7 +42,7 @@
 		schema: ColumnInfo[];
 		rows: DataRow[];
 		execution_time_ms: number;
-		total_rows: number; // Necessário para a paginação saber o fim
+		total_rows: number;
 	}
 
 	// --- ESTADO DE DADOS ---
@@ -58,7 +61,7 @@
 
 	let isSqlMode = false;
 	let sqlExecutionTime = 0;
-	let currentSqlQuery = ""; // Guarda a query atual para poder paginar
+	let currentSqlQuery = ""; // Guarda a query atual
 
 	// --- REATIVIDADE ---
 	$: totalPages = Math.ceil(totalRows / pageSize);
@@ -72,7 +75,7 @@
 		isDark = !isDark;
 	}
 
-	// --- LISTENERS DE DRAG & DROP ---
+	// --- DRAG & DROP ---
 	onMount(async () => {
 		unlistenDrop = await listen("tauri://drag-drop", (event: any) => {
 			isDragging = false;
@@ -115,14 +118,12 @@
 		isLoading = true;
 		errorMsg = "";
 
-		// Reset Total
 		schema = [];
 		rows = [];
 		selectedFile = filePath;
 		currentPage = 0;
 		totalRows = 0;
 
-		// Limpa estados de visualização
 		sortCol = null;
 		sortOrder = null;
 		isSqlMode = false;
@@ -162,8 +163,6 @@
 		}
 	}
 
-	// --- CARREGAMENTO DE PÁGINA UNIFICADO ---
-	// Essa função decide qual comando chamar (SQL ou Normal) baseado no modo atual
 	async function loadPage(page: number) {
 		if (!selectedFile) return;
 		isLoading = true;
@@ -171,19 +170,18 @@
 
 		try {
 			if (isSqlMode) {
-				// MODO SQL: Chama o comando com paginação
+				// Se não tiver query definida, usa SELECT * como fallback
+				const queryToRun = currentSqlQuery || "SELECT * FROM t";
+
 				const result = await invoke<QueryResult>("run_sql", {
 					filePath: selectedFile,
-					query: currentSqlQuery, // Usa a query guardada
-					page: page, // Envia a página desejada
+					query: queryToRun,
+					page: page,
 					pageSize: pageSize,
 				});
 
 				rows = result.rows;
-				// Nota: schema e totalRows já foram definidos no handleRunSql,
-				// mas o result.rows traz os dados corretos da página.
 			} else {
-				// MODO NORMAL: Chama get_page_data com ordenação
 				rows = await invoke("get_page_data", {
 					filePath: selectedFile,
 					page: page,
@@ -202,7 +200,7 @@
 	}
 
 	function handleSort(columnName: string) {
-		if (isSqlMode) return; // Ordenação por clique desabilitada no modo SQL (pois exigiria reescrever a query do usuário)
+		if (isSqlMode) return;
 
 		if (sortCol === columnName) {
 			sortOrder = sortOrder === "ASC" ? "DESC" : "ASC";
@@ -213,15 +211,14 @@
 		loadPage(currentPage);
 	}
 
-	// --- HANDLER DO MODO SQL ---
+	// --- MODO SQL ---
 	async function handleRunSql(query: string) {
 		showSqlModal = false;
 		isLoading = true;
 		errorMsg = "";
-		currentSqlQuery = query; // Salva a query para usar na paginação depois
+		currentSqlQuery = query;
 
 		try {
-			// Roda a query pedindo a página 0
 			const result = await invoke<QueryResult>("run_sql", {
 				filePath: selectedFile,
 				query: query,
@@ -231,12 +228,12 @@
 
 			schema = result.schema;
 			rows = result.rows;
-			totalRows = result.total_rows; // Backend agora retorna o total real do COUNT(*)
+			totalRows = result.total_rows;
 			sqlExecutionTime = result.execution_time_ms;
 
 			isSqlMode = true;
 			currentPage = 0;
-			sortCol = null; // Limpa ordenação visual
+			sortCol = null;
 		} catch (e) {
 			console.error(e);
 			errorMsg = `Erro na query: ${e}`;
@@ -246,7 +243,61 @@
 	}
 
 	function exitSqlMode() {
-		loadParquetFile(selectedFile); // Recarrega o arquivo limpo
+		loadParquetFile(selectedFile);
+	}
+
+	// --- NOVA FUNÇÃO: EXPORTAR DADOS ---
+	async function handleExportData(format: string, scope: "all" | "query") {
+		if (!selectedFile) return;
+
+		isExporting = true; // Ativa spinner no botão do modal
+
+		try {
+			// 1. Define a extensão baseada no formato escolhido
+			const ext = format.toLowerCase();
+
+			// 2. Abre diálogo para escolher onde salvar
+			const savePath = await save({
+				title: "Salvar Arquivo Exportado",
+				defaultPath: `export.${ext}`,
+				filters: [{ name: format, extensions: [ext] }],
+			});
+
+			if (!savePath) {
+				isExporting = false;
+				return; // Usuário cancelou
+			}
+
+			// 3. Define qual query exportar
+			let queryToExport = "SELECT * FROM t";
+
+			if (scope === "query" && currentSqlQuery) {
+				// Usa a query customizada
+				queryToExport = currentSqlQuery;
+			} else if (scope === "all" && !isSqlMode && sortCol && sortOrder) {
+				// Usa tabela completa, mas respeita a ordenação visual se houver
+				queryToExport += ` ORDER BY "${sortCol}" ${sortOrder}`;
+			}
+
+			// 4. Chama o comando Rust
+			await invoke("export_data", {
+				filePath: selectedFile,
+				query: queryToExport,
+				outputPath: savePath,
+				format: format,
+			});
+
+			// 5. Sucesso! Fecha modal e avisa
+			showExportModal = false;
+			// Dica: Aqui você poderia usar um Toast Notification se tivesse
+			alert(`Dados exportados com sucesso para ${savePath}!`);
+		} catch (e) {
+			console.error("Erro na exportação:", e);
+			errorMsg = `Erro ao exportar: ${e}`;
+			showExportModal = false; // Fecha modal em caso de erro crítico
+		} finally {
+			isExporting = false;
+		}
 	}
 </script>
 
@@ -344,6 +395,32 @@
 		{#if hasData}
 			<div class="data-header-row">
 				<div class="data-toolbar">
+					<button
+						class="btn-tool"
+						on:click={() => (showExportModal = true)}
+						title="Exportar Dados"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path
+								d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+							/><polyline points="7 10 12 15 17 10" /><line
+								x1="12"
+								y1="15"
+								x2="12"
+								y2="3"
+							/></svg
+						>
+						<span>Exportar</span>
+					</button>
+
 					{#if !isSqlMode}
 						<button
 							class="btn-tool"
@@ -386,7 +463,7 @@
 								Executado em {sqlExecutionTime}ms
 							</span>
 							<button class="btn-exit-sql" on:click={exitSqlMode}>
-								Sair
+								Encerrar Modo SQL
 							</button>
 						</div>
 					{/if}
@@ -557,6 +634,13 @@
 		onclose={() => (showSqlModal = false)}
 		onrun={handleRunSql}
 	/>
+	<ExportModal 
+        isOpen={showExportModal} 
+        isSqlMode={isSqlMode}
+        isLoading={isExporting}
+        onclose={() => showExportModal = false} 
+        onexport={handleExportData} 
+    />
 </main>
 
 <style src="./page.css"></style>
