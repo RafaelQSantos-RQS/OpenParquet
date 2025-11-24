@@ -1,4 +1,4 @@
-
+// src-tauri/src/db_logic.rs
 use crate::models::{ColumnInfo, PageData, QueryResult};
 use duckdb::types::ValueRef;
 use duckdb::{Connection, Result};
@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 use chrono::NaiveDate;
 
-
+// Helper para limpar os dados
 fn format_value(val: ValueRef) -> String {
     match val {
         ValueRef::Null => "NULL".to_string(),
@@ -93,17 +93,9 @@ pub fn get_page_data_from_db(
     let rows_iter = stmt.query_map([], |row| {
         let mut row_map = HashMap::new();
         for (i, name) in col_names.iter().enumerate() {
-            let val_ref_result = row.get_ref(i);
-            let val_str = match val_ref_result {
-                Ok(val_ref) => match val_ref {
-                    ValueRef::Null => "NULL".to_string(),
-                    ValueRef::Text(bytes) => String::from_utf8_lossy(bytes).to_string(),
-                    _ => "[Tipo inesperado]".to_string(),
-                },
-                Err(e) => {
-                    println!("[ERRO DB] Falha ao ler coluna {}: {}", name, e);
-                    "[ERRO]".to_string()
-                }
+            let val_str = match row.get_ref(i) {
+                Ok(val) => format_value(val),
+                Err(_) => "ERROR".to_string(),
             };
             row_map.insert(name.clone(), val_str);
         }
@@ -114,28 +106,23 @@ pub fn get_page_data_from_db(
     Ok(data)
 }
 
-
 pub fn exec_custom_query(
     conn: &Connection, 
     file_path: &str, 
     user_query: &str,
-    limit: usize,  
-    offset: usize  
+    limit: usize,
+    offset: usize
 ) -> Result<QueryResult> {
     let start = Instant::now();
 
-    
     let view_sql = format!("CREATE OR REPLACE VIEW t AS SELECT * FROM '{}';", file_path);
     conn.execute(&view_sql, [])?;
 
-    
     let clean_query = user_query.trim().trim_end_matches(';');
 
-    
     let count_sql = format!("SELECT COUNT(*) FROM ({})", clean_query);
     let total_rows: i64 = conn.query_row(&count_sql, [], |row| row.get(0))?;
 
-    
     let describe_sql = format!("DESCRIBE SELECT * FROM ({})", clean_query);
     let mut stmt_desc = conn.prepare(&describe_sql)?;
     
@@ -147,18 +134,16 @@ pub fn exec_custom_query(
     })?;
 
     let mut schema = Vec::new();
-    for col in schema_iter {
-        if let Ok(c) = col { schema.push(c); }
+    for col in schema_iter.flatten() {
+        schema.push(col);
     }
 
-    
     let paged_sql = format!("SELECT * FROM ({}) LIMIT {} OFFSET {}", clean_query, limit, offset);
     let mut stmt = conn.prepare(&paged_sql)?;
     
     let rows_iter = stmt.query_map([], |row| {
         let mut row_map = HashMap::new();
         for (i, col) in schema.iter().enumerate() {
-            
             let val_str = match row.get_ref(i) {
                 Ok(val) => format_value(val),
                 Err(_) => "NULL".to_string(),
@@ -175,6 +160,6 @@ pub fn exec_custom_query(
         schema,
         rows,
         execution_time_ms: duration,
-        total_rows, 
+        total_rows,
     })
 }
