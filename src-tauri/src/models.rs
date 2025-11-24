@@ -1,4 +1,4 @@
-// src-tauri/src/models.rs
+
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -17,3 +17,11 @@ pub struct FileMetadata {
 }
 
 pub type PageData = Vec<HashMap<String, String>>;
+
+#[derive(Serialize)]
+pub struct QueryResult {
+    pub schema: Vec<ColumnInfo>,
+    pub rows: Vec<HashMap<String, String>>,
+    pub execution_time_ms: u128,
+    pub total_rows: i64, 
+}

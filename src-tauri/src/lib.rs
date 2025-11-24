@@ -11,6 +11,7 @@ pub fn run() {
             commands::load_parquet_schema,
             commands::get_page_data,
             commands::get_file_metadata,
+            commands::run_sql,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

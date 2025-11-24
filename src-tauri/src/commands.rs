@@ -1,6 +1,6 @@
-// src-tauri/src/commands.rs
+
 use crate::db_logic;
-use crate::models::{ColumnInfo, FileMetadata, PageData};
+use crate::models::{ColumnInfo, FileMetadata, PageData, QueryResult};
 use duckdb::Connection;
 
 fn db_err(e: duckdb::Error) -> String {
@@ -61,4 +61,19 @@ pub async fn get_file_metadata(file_path: String) -> Result<FileMetadata, String
         total_rows,
         schema,
     })
+}
+
+#[tauri::command(rename_all = "camelCase")]
+pub async fn run_sql(
+    file_path: String, 
+    query: String,
+    page: usize,
+    page_size: usize
+) -> Result<QueryResult, String> {
+    println!("Backend: Executando SQL customizado (Pag {})...", page);
+    let conn = Connection::open_in_memory().map_err(db_err)?;
+    
+    let offset = page * page_size;
+
+    db_logic::exec_custom_query(&conn, &file_path, &query, page_size, offset).map_err(db_err)
 }
