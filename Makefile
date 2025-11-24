@@ -30,7 +30,7 @@ check:
 	cd src-tauri && cargo clippy -- -D warnings
 
 # --- Release & Versionamento ---
-release:
+release: check
 	@if [ -z "$(v)" ]; then echo "❌ Erro: Especifique a versão. Ex: make release v=patch"; exit 1; fi
 	@echo "🚀 Gerando versão $(v)..."
 	$(NPM) version $(v)
