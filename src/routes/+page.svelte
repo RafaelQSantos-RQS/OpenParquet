@@ -6,6 +6,14 @@
 	import { openUrl } from "@tauri-apps/plugin-opener";
 	import { APP_INFO } from "$lib/constants";
 
+	// IMPORT NOVO: Serviço de Preferências
+	import {
+		getTheme,
+		setTheme,
+		getRecentFiles,
+		addRecentFile,
+	} from "$lib/preferences";
+
 	// Componentes UI
 	import Titlebar from "./components/Titlebar/Titlebar.svelte";
 	import Pagination from "./components/Pagination/Pagination.svelte";
@@ -55,13 +63,16 @@
 	let currentPage = 0;
 	const pageSize = 50;
 
+	// --- ESTADO DE PREFERÊNCIAS ---
+	let recentFiles: string[] = [];
+
 	// --- ESTADO DE ORDENAÇÃO & SQL ---
 	let sortCol: string | null = null;
 	let sortOrder: "ASC" | "DESC" | null = null;
 
 	let isSqlMode = false;
 	let sqlExecutionTime = 0;
-	let currentSqlQuery = ""; // Guarda a query atual
+	let currentSqlQuery = "";
 
 	// --- REATIVIDADE ---
 	$: totalPages = Math.ceil(totalRows / pageSize);
@@ -71,12 +82,15 @@
 		document.body.classList.toggle("dark-mode", isDark);
 	}
 
-	function toggleTheme() {
-		isDark = !isDark;
-	}
-
-	// --- DRAG & DROP ---
+	// --- INICIALIZAÇÃO ---
 	onMount(async () => {
+		const savedTheme = await getTheme();
+		if (savedTheme) {
+			isDark = savedTheme === "dark";
+		}
+
+		recentFiles = await getRecentFiles();
+
 		unlistenDrop = await listen("tauri://drag-drop", (event: any) => {
 			isDragging = false;
 			if (event.payload.paths && event.payload.paths.length > 0) {
@@ -104,12 +118,17 @@
 		if (unlistenCancel) unlistenCancel();
 	});
 
-	// --- FUNÇÕES AUXILIARES ---
+	// --- TEMA ---
+	function toggleTheme() {
+		isDark = !isDark;
+		setTheme(isDark ? "dark" : "light");
+	}
+
 	async function openExternal(url: string) {
 		try {
 			await openUrl(url);
 		} catch (e) {
-			console.error("Falha ao abrir link:", e);
+			console.error(e);
 		}
 	}
 
@@ -118,6 +137,7 @@
 		isLoading = true;
 		errorMsg = "";
 
+		// Reset Total
 		schema = [];
 		rows = [];
 		selectedFile = filePath;
@@ -135,6 +155,10 @@
 			});
 			schema = metadata.schema;
 			totalRows = metadata.total_rows;
+
+			// SUCESSO: Salva no histórico
+			await addRecentFile(filePath);
+			recentFiles = await getRecentFiles();
 
 			if (schema.length > 0) {
 				await loadPage(0);
@@ -163,6 +187,7 @@
 		}
 	}
 
+	// --- OUTRAS FUNÇÕES (Paginação, Sort, SQL, Export) ---
 	async function loadPage(page: number) {
 		if (!selectedFile) return;
 		isLoading = true;
@@ -170,16 +195,12 @@
 
 		try {
 			if (isSqlMode) {
-				// Se não tiver query definida, usa SELECT * como fallback
-				const queryToRun = currentSqlQuery || "SELECT * FROM t";
-
 				const result = await invoke<QueryResult>("run_sql", {
 					filePath: selectedFile,
-					query: queryToRun,
+					query: currentSqlQuery,
 					page: page,
 					pageSize: pageSize,
 				});
-
 				rows = result.rows;
 			} else {
 				rows = await invoke("get_page_data", {
@@ -201,7 +222,6 @@
 
 	function handleSort(columnName: string) {
 		if (isSqlMode) return;
-
 		if (sortCol === columnName) {
 			sortOrder = sortOrder === "ASC" ? "DESC" : "ASC";
 		} else {
@@ -211,7 +231,6 @@
 		loadPage(currentPage);
 	}
 
-	// --- MODO SQL ---
 	async function handleRunSql(query: string) {
 		showSqlModal = false;
 		isLoading = true;
@@ -246,17 +265,12 @@
 		loadParquetFile(selectedFile);
 	}
 
-	// --- NOVA FUNÇÃO: EXPORTAR DADOS ---
 	async function handleExportData(format: string, scope: "all" | "query") {
 		if (!selectedFile) return;
-
-		isExporting = true; // Ativa spinner no botão do modal
+		isExporting = true;
 
 		try {
-			// 1. Define a extensão baseada no formato escolhido
 			const ext = format.toLowerCase();
-
-			// 2. Abre diálogo para escolher onde salvar
 			const savePath = await save({
 				title: "Salvar Arquivo Exportado",
 				defaultPath: `export.${ext}`,
@@ -265,21 +279,16 @@
 
 			if (!savePath) {
 				isExporting = false;
-				return; // Usuário cancelou
+				return;
 			}
 
-			// 3. Define qual query exportar
 			let queryToExport = "SELECT * FROM t";
-
 			if (scope === "query" && currentSqlQuery) {
-				// Usa a query customizada
 				queryToExport = currentSqlQuery;
 			} else if (scope === "all" && !isSqlMode && sortCol && sortOrder) {
-				// Usa tabela completa, mas respeita a ordenação visual se houver
 				queryToExport += ` ORDER BY "${sortCol}" ${sortOrder}`;
 			}
 
-			// 4. Chama o comando Rust
 			await invoke("export_data", {
 				filePath: selectedFile,
 				query: queryToExport,
@@ -287,14 +296,12 @@
 				format: format,
 			});
 
-			// 5. Sucesso! Fecha modal e avisa
 			showExportModal = false;
-			// Dica: Aqui você poderia usar um Toast Notification se tivesse
 			alert(`Dados exportados com sucesso para ${savePath}!`);
 		} catch (e) {
 			console.error("Erro na exportação:", e);
 			errorMsg = `Erro ao exportar: ${e}`;
-			showExportModal = false; // Fecha modal em caso de erro crítico
+			showExportModal = false;
 		} finally {
 			isExporting = false;
 		}
@@ -347,6 +354,7 @@
 				<p class="welcome-subtitle">
 					Arraste um arquivo ou clique abaixo para começar.
 				</p>
+
 				<button
 					class="btn-primary large-btn"
 					on:click={handleOpenFile}
@@ -377,6 +385,41 @@
 						Abrir Arquivo Parquet
 					{/if}
 				</button>
+
+				{#if recentFiles.length > 0}
+					<div class="recent-files">
+						<h3>Recentes</h3>
+						<ul>
+							{#each recentFiles as file}
+								<li>
+									<button
+										class="btn-recent"
+										on:click={() => loadParquetFile(file)}
+									>
+										<span class="icon-file">
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												><path
+													d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"
+												/><polyline
+													points="13 2 13 9 20 9"
+												/></svg
+											>
+										</span>
+										<span class="file-path" title={file}
+											>{file}</span
+										>
+									</button>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
 			</div>
 		{/if}
 
@@ -399,6 +442,7 @@
 						class="btn-tool"
 						on:click={() => (showExportModal = true)}
 						title="Exportar Dados"
+						disabled={isLoading}
 					>
 						<svg
 							width="16"
@@ -634,13 +678,13 @@
 		onclose={() => (showSqlModal = false)}
 		onrun={handleRunSql}
 	/>
-	<ExportModal 
-        isOpen={showExportModal} 
-        isSqlMode={isSqlMode}
-        isLoading={isExporting}
-        onclose={() => showExportModal = false} 
-        onexport={handleExportData} 
-    />
+	<ExportModal
+		isOpen={showExportModal}
+		{isSqlMode}
+		isLoading={isExporting}
+		onclose={() => (showExportModal = false)}
+		onexport={handleExportData}
+	/>
 </main>
 
 <style src="./page.css"></style>

@@ -47,12 +47,14 @@
     --color-text-main: #24292f;
     --color-text-muted: #57606a;
 
+    /* Verdes Ajustados para Contraste */
     --color-brand-primary: #1a7f37; 
     --color-brand-hover: #115e27;
     --color-brand-accent: #055d20;  
     --color-brand-subtle: #dafbe1;
     --color-link: #0969da;
 
+    /* Tabelas */
     --color-table-header-bg: #f6f8fa;
     --color-table-row-even: #ffffff;
     --color-table-row-hover: #f0f3f6;
@@ -60,6 +62,7 @@
     --overlay-bg: rgba(255, 255, 255, 0.85);
 }
 
+/* --- 2. ESTILOS GLOBAIS --- */
 :global(body) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     margin: 0;
@@ -76,6 +79,7 @@
     width: 100%;
 }
 
+/* Scrollbar Personalizada */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -92,6 +96,7 @@
     background: var(--color-bg-subtle);
 }
 
+/* --- 3. LAYOUT PRINCIPAL --- */
 .container {
     display: flex;
     flex-direction: column;
@@ -105,12 +110,14 @@
     display: flex;
     flex-direction: column;
     padding: 1rem;
+    /* Gap reduzido para compactar a interface */
     gap: 0.5rem; 
     min-height: 0;
     overflow: hidden;
     position: relative;
 }
 
+/* Área de Ações Superior (Botão Abrir / Erro) */
 .actions-bar {
     flex-shrink: 0;
     display: flex;
@@ -118,6 +125,7 @@
     gap: 1rem;
 }
 
+/* Container da Tabela (Scroll Interno) */
 .flex-table-container {
     flex: 1;
     min-height: 0;
@@ -129,13 +137,15 @@
     overflow: hidden;
 }
 
+/* Rodapé (Paginação Centralizada) */
 .footer-actions {
     flex-shrink: 0;
     display: flex;
-    justify-content: center;
+    justify-content: center; /* Centraliza os botões */
     padding-top: 0.2rem;
 }
 
+/* --- 4. COMPONENTES VISUAIS GERAIS --- */
 .btn-primary {
     background-color: var(--color-brand-primary);
     color: #ffffff;
@@ -181,33 +191,39 @@
     border-color: #ff818266;
 }
 
+/* --- 5. CABEÇALHO DE DADOS (Toolbar + Metadados) --- */
 .data-header-row {
     display: flex;
     justify-content: space-between; 
+    /* ALINHAMENTO CENTRAL: Garante que botão e painel fiquem na mesma linha visual */
     align-items: center; 
     gap: 1rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.5rem; /* Espaço uniforme abaixo */
     flex-wrap: wrap-reverse; 
 }
 
+/* A Barra de Ferramentas (Botão SQL - Esquerda) */
 .data-toolbar {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     flex-shrink: 0; 
-    margin-right: auto;
+    margin-right: auto; /* Empurra o metadata para a direita */
 }
 
+/* O Painel de Metadados (Direita) */
 .metadata-wrapper {
     flex: 1;
     min-width: 300px; 
 }
 
+/* --- BOTÕES DA BARRA DE FERRAMENTAS --- */
 .btn-tool {
     background-color: var(--color-bg-surface);
     color: var(--color-text-main);
     border: 1px solid var(--color-border);
     
+    /* Padding exato para igualar a altura do MetadataPanel Header */
     padding: 0.75rem 1rem; 
     
     border-radius: 6px;
@@ -217,6 +233,8 @@
     gap: 8px;
     font-size: 0.9rem;
     font-weight: 600;
+    
+    /* Altura mínima travada para alinhar */
     min-height: 42px; 
     line-height: 1.2;
     box-sizing: border-box;
@@ -229,15 +247,19 @@
     color: var(--color-brand-primary);
 }
 
+/* Badge e Controles SQL (Modo Ativo) */
 .sql-status-bar {
     display: flex;
     align-items: center;
     gap: 1rem;
     background-color: var(--color-bg-surface);
+    
+    /* Padding ajustado para somar a mesma altura final */
     padding: 0.65rem 0.65rem 0.65rem 1rem;
+    
     border-radius: 6px;
     border: 1px solid var(--color-data-bg);
-    min-height: 42px;
+    min-height: 42px; /* Trava a altura */
     box-sizing: border-box;
 }
 
@@ -267,6 +289,7 @@
     opacity: 0.9;
 }
 
+/* --- 6. TELA INICIAL (Welcome) --- */
 .empty-state-container {
     flex: 1;
     display: flex;
@@ -312,11 +335,73 @@
     box-shadow: 0 6px 20px rgba(8, 135, 43, 0.4);
 }
 
+/* --- ESTILOS PARA ARQUIVOS RECENTES (NOVO) --- */
+.recent-files {
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+.recent-files h3 {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+}
+
+.recent-files ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-recent {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0.8rem;
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.btn-recent:hover {
+    border-color: var(--color-brand-primary);
+    background-color: var(--color-bg-subtle);
+    transform: translateX(4px); /* Efeito visual sutil de "ir" */
+}
+
+.btn-recent .icon-file {
+    color: var(--color-brand-accent);
+    display: flex;
+}
+
+.file-path {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl; /* Faz o final do caminho aparecer se for longo */
+    text-align: left;
+    flex: 1;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* --- 7. ESTILOS DO MODAL SOBRE --- */
 .about-content {
     text-align: center;
     display: flex;
@@ -341,6 +426,7 @@
     display: inline-block;
 }
 
+/* Links Sociais */
 .social-links {
     display: flex;
     justify-content: center;
@@ -394,6 +480,7 @@
 }
 .attribution:hover { opacity: 1; text-decoration: underline; }
 
+/* --- 8. DRAG & DROP OVERLAY --- */
 .drop-overlay {
     position: fixed;
     top: 0;

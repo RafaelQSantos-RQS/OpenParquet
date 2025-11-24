@@ -24,8 +24,8 @@
 Estamos trabalhando ativamente para tornar o OpenParquet a ferramenta definitiva. Aqui está o que vem por aí:
 
 - [x] **Ordenação de Colunas:** Ordenação nativa via SQL ao clicar no cabeçalho.
-- [ ] **Preferências:** Salvar tema (Dark/Light) e tamanho da janela entre sessões.
-- [ ] **Histórico:** Lista de arquivos abertos recentemente na tela inicial.
+- [x] **Preferências:** Salvar tema (Dark/Light) e tamanho da janela entre sessões.
+- [x] **Histórico:** Lista de arquivos abertos recentemente na tela inicial.
 - [x] **Modo SQL:** Interface para rodar queries SQL personalizadas nos dados carregados.
 - [ ] **Filtros Rápidos:** Barra de busca global e filtros por coluna.
 - [x] **Exportação:** Exportar visualização atual para CSV ou JSON.

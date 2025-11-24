@@ -1,10 +1,10 @@
 // src-tauri/src/db_logic.rs
 use crate::models::{ColumnInfo, PageData, QueryResult};
+use chrono::NaiveDate;
 use duckdb::types::ValueRef;
 use duckdb::{Connection, Result};
 use std::collections::HashMap;
 use std::time::Instant;
-use chrono::NaiveDate;
 
 // Helper para limpar os dados
 fn format_value(val: ValueRef) -> String {
@@ -24,14 +24,12 @@ fn format_value(val: ValueRef) -> String {
         ValueRef::Double(d) => d.to_string(),
         ValueRef::Decimal(d) => d.to_string(),
         ValueRef::Text(t) => String::from_utf8_lossy(t).to_string(),
-        ValueRef::Date32(days) => {
-            match NaiveDate::from_ymd_opt(1970, 1, 1) {
-                Some(epoch) => match epoch.checked_add_signed(chrono::Duration::days(days as i64)) {
-                    Some(d) => d.format("%Y-%m-%d").to_string(),
-                    None => days.to_string()
-                },
-                None => days.to_string()
-            }
+        ValueRef::Date32(days) => match NaiveDate::from_ymd_opt(1970, 1, 1) {
+            Some(epoch) => match epoch.checked_add_signed(chrono::Duration::days(days as i64)) {
+                Some(d) => d.format("%Y-%m-%d").to_string(),
+                None => days.to_string(),
+            },
+            None => days.to_string(),
         },
         ValueRef::Time64(_, micros) => micros.to_string(),
         ValueRef::Timestamp(_, micros) => micros.to_string(),
@@ -69,7 +67,6 @@ pub fn get_page_data_from_db(
     sort_col: Option<String>,
     sort_order: Option<String>,
 ) -> Result<PageData> {
-    
     let select_casts = col_names
         .iter()
         .map(|name| format!("\"{}\"::VARCHAR", name))
@@ -77,7 +74,11 @@ pub fn get_page_data_from_db(
         .join(", ");
 
     let order_clause = if let (Some(col), Some(order)) = (sort_col, sort_order) {
-        let direction = if order.to_uppercase() == "DESC" { "DESC" } else { "ASC" };
+        let direction = if order.to_uppercase() == "DESC" {
+            "DESC"
+        } else {
+            "ASC"
+        };
         format!("ORDER BY \"{}\" {}", col, direction)
     } else {
         String::new()
@@ -107,11 +108,11 @@ pub fn get_page_data_from_db(
 }
 
 pub fn exec_custom_query(
-    conn: &Connection, 
-    file_path: &str, 
+    conn: &Connection,
+    file_path: &str,
     user_query: &str,
     limit: usize,
-    offset: usize
+    offset: usize,
 ) -> Result<QueryResult> {
     let start = Instant::now();
 
@@ -125,7 +126,7 @@ pub fn exec_custom_query(
 
     let describe_sql = format!("DESCRIBE SELECT * FROM ({})", clean_query);
     let mut stmt_desc = conn.prepare(&describe_sql)?;
-    
+
     let schema_iter = stmt_desc.query_map([], |row| {
         Ok(ColumnInfo {
             name: row.get(0)?,
@@ -138,9 +139,12 @@ pub fn exec_custom_query(
         schema.push(col);
     }
 
-    let paged_sql = format!("SELECT * FROM ({}) LIMIT {} OFFSET {}", clean_query, limit, offset);
+    let paged_sql = format!(
+        "SELECT * FROM ({}) LIMIT {} OFFSET {}",
+        clean_query, limit, offset
+    );
     let mut stmt = conn.prepare(&paged_sql)?;
-    
+
     let rows_iter = stmt.query_map([], |row| {
         let mut row_map = HashMap::new();
         for (i, col) in schema.iter().enumerate() {
@@ -169,9 +173,9 @@ pub fn export_query_to_file(
     file_path: &str,
     query: &str,
     output_path: &str,
-    format: &str
+    format: &str,
 ) -> Result<()> {
-    let view_sql = format!("CREATE OR REPLACE VIEW t AS SELECT * FROM '{}'",file_path);
+    let view_sql = format!("CREATE OR REPLACE VIEW t AS SELECT * FROM '{}'", file_path);
     conn.execute(&view_sql, [])?;
 
     let (fmt_cmd, opts) = match format.to_uppercase().as_str() {
