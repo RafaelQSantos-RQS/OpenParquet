@@ -26,7 +26,7 @@ Estamos trabalhando ativamente para tornar o OpenParquet a ferramenta definitiva
 - [x] **Ordenação de Colunas:** Ordenação nativa via SQL ao clicar no cabeçalho.
 - [ ] **Preferências:** Salvar tema (Dark/Light) e tamanho da janela entre sessões.
 - [ ] **Histórico:** Lista de arquivos abertos recentemente na tela inicial.
-- [ ] **Modo SQL:** Interface para rodar queries SQL personalizadas nos dados carregados.
+- [x] **Modo SQL:** Interface para rodar queries SQL personalizadas nos dados carregados.
 - [ ] **Filtros Rápidos:** Barra de busca global e filtros por coluna.
 - [ ] **Exportação:** Exportar visualização atual para CSV ou JSON.
 - [ ] **Abrir Pasta:** Carregar múltiplos arquivos Parquet de uma pasta como uma única tabela.
