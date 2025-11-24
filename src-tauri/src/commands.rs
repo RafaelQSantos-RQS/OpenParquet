@@ -1,4 +1,3 @@
-
 use crate::db_logic;
 use crate::models::{ColumnInfo, FileMetadata, PageData, QueryResult};
 use duckdb::Connection;
@@ -11,7 +10,7 @@ fn db_err(e: duckdb::Error) -> String {
 pub async fn load_parquet_schema(file_path: String) -> Result<Vec<ColumnInfo>, String> {
     println!("Backend: Lendo esquema de {}", file_path);
     let conn = Connection::open_in_memory().map_err(db_err)?;
-    
+
     db_logic::get_schema_from_db(&conn, &file_path).map_err(db_err)
 }
 
@@ -23,25 +22,18 @@ pub async fn get_page_data(
     sort_col: Option<String>,
     sort_order: Option<String>,
 ) -> Result<PageData, String> {
-    
     println!("Backend: Lendo dados para: {}, página {}", file_path, page);
     let conn = Connection::open_in_memory().map_err(db_err)?;
     let offset = page * page_size;
 
     let schema = db_logic::get_schema_from_db(&conn, &file_path).map_err(db_err)?;
     let col_names: Vec<String> = schema.into_iter().map(|col| col.name).collect();
-    
+
     let data = db_logic::get_page_data_from_db(
-        &conn, 
-        &file_path, 
-        col_names, 
-        page_size, 
-        offset,
-        sort_col,
-        sort_order
+        &conn, &file_path, col_names, page_size, offset, sort_col, sort_order,
     )
     .map_err(db_err)?;
-    
+
     println!("Backend: Retornando {} linhas para o Svelte.", data.len());
     Ok(data)
 }
@@ -54,8 +46,12 @@ pub async fn get_file_metadata(file_path: String) -> Result<FileMetadata, String
     let schema = db_logic::get_schema_from_db(&conn, &file_path).map_err(db_err)?;
     let total_rows = db_logic::get_row_count_from_db(&conn, &file_path).map_err(db_err)?;
 
-    println!("Backend: Metadados: {} colunas, {} linhas.", schema.len(), total_rows);
-    
+    println!(
+        "Backend: Metadados: {} colunas, {} linhas.",
+        schema.len(),
+        total_rows
+    );
+
     Ok(FileMetadata {
         file_path,
         total_rows,
@@ -65,15 +61,36 @@ pub async fn get_file_metadata(file_path: String) -> Result<FileMetadata, String
 
 #[tauri::command(rename_all = "camelCase")]
 pub async fn run_sql(
-    file_path: String, 
+    file_path: String,
     query: String,
     page: usize,
-    page_size: usize
+    page_size: usize,
 ) -> Result<QueryResult, String> {
     println!("Backend: Executando SQL customizado (Pag {})...", page);
     let conn = Connection::open_in_memory().map_err(db_err)?;
-    
+
     let offset = page * page_size;
 
     db_logic::exec_custom_query(&conn, &file_path, &query, page_size, offset).map_err(db_err)
+}
+
+#[tauri::command(rename_all = "camelCase")]
+pub async fn export_data(
+    file_path: String,
+    query: String,
+    output_path: String,
+    format: String,
+) -> Result<(), String> {
+    println!(
+        "Backend: Exportando dados para {} (Formato: {})...",
+        output_path, format
+    );
+
+    let conn = Connection::open_in_memory().map_err(db_err)?;
+
+    db_logic::export_query_to_file(&conn, &file_path, &query, &output_path, &format)
+        .map_err(db_err)?;
+
+    println!("Backend: Exportação concluída com sucesso!");
+    Ok(())
 }
