@@ -16,7 +16,10 @@
         "width": 800,
         "height": 600,
         "decorations": false,
-        "transparent": false
+        "transparent": false,
+        "center": true,
+        "maximized": true,
+        "fullscreen": false
       }
     ],
     "security": {
