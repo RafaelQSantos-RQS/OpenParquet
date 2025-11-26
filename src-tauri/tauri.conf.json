@@ -35,6 +35,30 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "shortDescription": "Visualizador desktop de arquivos Parquet.",
+    "longDescription": "OpenParquet é uma ferramenta moderna para visualizar, filtrar e analisar arquivos Apache Parquet. Construído com Rust e DuckDB para velocidade máxima, permite abrir arquivos gigantes instantaneamente.",
+    "copyright": "Copyright © 2025 Rafael Santos",
+    "category": "Development",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true,
+        "files": {}
+      },
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "libappindicator3-1"
+        ],
+        "files": {
+          "/usr/share/metainfo/com.rafael-qsantos.openparquet.metainfo.xml": "src-tauri/linux/com.rafael-qsantos.openparquet.metainfo.xml"
+        }
+      },
+      "rpm": {
+        "epoch": 0,
+        "files": {},
+        "release": "1"
+      }
+    }
   }
 }
