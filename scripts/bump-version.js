@@ -1,7 +1,9 @@
-const fs = require('fs');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import { execSync } from 'child_process';
+import process from 'process';
 
 const newVersion = process.env.npm_package_version;
+
 if (!newVersion) {
     console.error("Erro: Este script deve ser rodado pelo 'npm version'");
     process.exit(1);
@@ -18,6 +20,7 @@ console.log(`✅ ${tauriPath} atualizado.`);
 const xmlPath = 'src-tauri/linux/com.rafaelqsantos.openparquet.metainfo.xml';
 let xmlContent = fs.readFileSync(xmlPath, 'utf8');
 
+// Data de hoje no formato YYYY-MM-DD
 const today = new Date().toISOString().split('T')[0];
 
 const releaseRegex = /<release version="[^"]*" date="[^"]*" \/>/;
