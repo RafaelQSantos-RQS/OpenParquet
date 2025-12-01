@@ -19,6 +19,37 @@
 * **Metadados Detalhados:** Schema e tipos de colunas.
 * **Multiplataforma:** Windows, macOS e Linux.
 
+## 📸 Screenshots
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="./screenshots/main.png" alt="OpenParquet Main Screen" width="100%" />
+      <br>
+      <em>Tela principal</em>
+    </td>
+    <td align="center">
+      <img src="./screenshots/data-table.png" alt="OpenParquet Data Table" width="100%" />
+      <br>
+      <em>Tabela de dados</em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./screenshots/executar-consulta-sql.png" alt="OpenParquet SQL Query" width="100%" />
+      <br>
+      <em>Consultas SQL</em>
+    </td>
+    <td align="center">
+      <img src="./screenshots/exporta-dados.png" alt="OpenParquet Export Data" width="100%" />
+      <br>
+      <em>Exportação de dados</em>
+    </td>
+  </tr>
+</table>
+
+
+
 ## 🗺️ Roadmap (To-Do)
 
 Estamos trabalhando ativamente para tornar o OpenParquet a ferramenta definitiva. Aqui está o que vem por aí:
