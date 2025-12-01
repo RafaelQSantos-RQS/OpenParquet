@@ -15,7 +15,7 @@ tauriConf.version = newVersion;
 fs.writeFileSync(tauriPath, JSON.stringify(tauriConf, null, 2));
 console.log(`✅ ${tauriPath} atualizado.`);
 
-const xmlPath = 'src-tauri/linux/com.rafael-qsantos.openparquet.metainfo.xml';
+const xmlPath = 'src-tauri/linux/com.rafaelqsantos.openparquet.metainfo.xml';
 let xmlContent = fs.readFileSync(xmlPath, 'utf8');
 
 const today = new Date().toISOString().split('T')[0];
