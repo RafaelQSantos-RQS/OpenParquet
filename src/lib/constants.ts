@@ -1,6 +1,6 @@
 export const APP_INFO = {
     name: 'OpenParquet',
-    version: 'v0.1.0',
+    version: 'v0.2.0',
     description: 'Uma ferramenta moderna de alta performance para visualização de arquivos Parquet.',
     
     author: {

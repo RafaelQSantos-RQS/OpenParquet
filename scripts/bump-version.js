@@ -17,6 +17,17 @@ tauriConf.version = newVersion;
 fs.writeFileSync(tauriPath, JSON.stringify(tauriConf, null, 2));
 console.log(`✅ ${tauriPath} atualizado.`);
 
+const cargoPath = 'src-tauri/Cargo.toml';
+let cargoContent = fs.readFileSync(cargoPath, 'utf8');
+const cargoVersionRegex = /^version\s*=\s*"[^"]*"/m;
+if (cargoVersionRegex.test(cargoContent)) {
+    cargoContent = cargoContent.replace(cargoVersionRegex, `version = "${newVersion}"`);
+    fs.writeFileSync(cargoPath, cargoContent);
+    console.log(`✅ ${cargoPath} atualizado.`);
+} else {
+    console.warn(`⚠️ Não foi possível encontrar a versão no Cargo.toml.`);
+}
+
 const constantsPath = 'src/lib/constants.ts';
 let constantsContent = fs.readFileSync(constantsPath, 'utf8');
 const versionRegex = /version:\s*'v[^']*'/;
@@ -47,7 +58,7 @@ if (releaseRegex.test(xmlContent)) {
 }
 
 try {
-    execSync(`git add ${tauriPath} ${constantsPath} ${xmlPath}`);
+    execSync(`git add ${tauriPath} ${cargoPath} ${constantsPath} ${xmlPath}`);
     console.log(`✅ Arquivos adicionados ao git.`);
 } catch (e) {
     console.error("Erro ao adicionar arquivos ao git:", e);
