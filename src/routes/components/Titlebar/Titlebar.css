@@ -119,6 +119,12 @@
 }
 .menu-item.active:hover { color: #ffffff; }
 
+.menu-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 4px 8px;
+}
+
 .titlebar-controls {
     display: flex;
     height: 100%;

@@ -1,29 +1,38 @@
 <script lang="ts">
-    // Sem 'createEventDispatcher'
-	export let currentPage: number;
-	export let totalPages: number;
-	export let isLoading: boolean;
-	export let rowsLength: number;
-	export let pageSize: number;
+	interface Props {
+		currentPage: number;
+		totalPages: number;
+		isLoading: boolean;
+		rowsLength: number;
+		pageSize: number;
+		onprev?: () => void;
+		onnext?: () => void;
+	}
 
-    // NOVO: Callbacks para navegação
-    export let onprev: () => void = () => {};
-    export let onnext: () => void = () => {};
+	let { 
+		currentPage, 
+		totalPages, 
+		isLoading, 
+		rowsLength, 
+		pageSize,
+		onprev = () => {},
+		onnext = () => {}
+	}: Props = $props();
 
-	$: isFirstPage = currentPage === 0;
-	$: isLastPage = rowsLength < pageSize || currentPage + 1 >= totalPages;
+	let isFirstPage = $derived(currentPage === 0);
+	let isLastPage = $derived(rowsLength < pageSize || currentPage + 1 >= totalPages);
 </script>
 
 <div class="pagination">
-    <button on:click={onprev} disabled={isFirstPage || isLoading}>
+	<button onclick={onprev} disabled={isFirstPage || isLoading}>
 		&larr; Anterior
 	</button>
 	
 	<span class="page-info">
-        Página <strong>{currentPage + 1}</strong> de <strong>{totalPages}</strong>
-    </span>
+		Página <strong>{currentPage + 1}</strong> de <strong>{totalPages}</strong>
+	</span>
 	
-    <button on:click={onnext} disabled={isLoading || isLastPage}>
+	<button onclick={onnext} disabled={isLoading || isLastPage}>
 		Próxima &rarr;
 	</button>
 </div>
