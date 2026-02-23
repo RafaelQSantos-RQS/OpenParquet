@@ -2951,6 +2951,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "duckdb",
+ "parking_lot",
  "serde",
  "serde_json",
  "tauri",
@@ -2958,6 +2959,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tauri-plugin-store",
+ "thiserror 2.0.17",
 ]
 
 [[package]]

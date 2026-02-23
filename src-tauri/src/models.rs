@@ -15,12 +15,34 @@ pub struct FileMetadata {
     pub schema: Vec<ColumnInfo>,
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct ParquetFileInfo {
+    pub file_name: String,
+    pub file_path: String,
+    pub row_count: i64,
+}
+
+#[derive(Serialize, Debug)]
+pub struct MultiFileMetadata {
+    pub directory_path: String,
+    pub files: Vec<ParquetFileInfo>,
+    pub total_rows: i64,
+    pub schema: Vec<ColumnInfo>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct FileListMetadata {
+    pub files: Vec<ParquetFileInfo>,
+    pub total_rows: i64,
+    pub schema: Vec<ColumnInfo>,
+}
+
 pub type PageData = Vec<HashMap<String, String>>;
 
 #[derive(Serialize)]
 pub struct QueryResult {
     pub schema: Vec<ColumnInfo>,
     pub rows: Vec<HashMap<String, String>>,
-    pub execution_time_ms: u128,
+    pub execution_time_ms: u64,
     pub total_rows: i64,
 }
