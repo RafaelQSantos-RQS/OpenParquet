@@ -4,12 +4,12 @@
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
   <name>OpenParquet</name>
-  <summary>Visualizador de arquivos Parquet</summary>
+  <summary>Parquet file viewer</summary>
   <description>
-    <p>Aplicativo desktop para visualizar arquivos Apache Parquet, explorar schemas,
-       paginar dados, executar consultas SQL e exportar resultados.</p>
+    <p>Desktop application for viewing Apache Parquet files, exploring schemas,
+       paginating data, running SQL queries and exporting results.</p>
   </description>
   <releases>
-    <release version="0.1.0" date="2026-08-05"/>
+    <release version="1.0.0" date="2026-08-12"/>
   </releases>
 </component>
