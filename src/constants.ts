@@ -1,7 +1,7 @@
 // App metadata (replicated from old_code src/lib/constants.ts, stack updated).
 export const APP_INFO = {
   name: "OpenParquet",
-  version: "v0.1.0",
+  version: "v1.0.0",
   description: "A modern, high-performance tool for viewing Parquet files.",
   author: {
     name: "Rafael Santos",
