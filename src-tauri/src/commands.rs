@@ -1,181 +1,74 @@
 use crate::db_logic;
-use crate::models::{
-    ColumnInfo, FileListMetadata, FileMetadata, MultiFileMetadata, PageData, QueryResult,
-};
+use crate::error::AppResult;
+use crate::models::{DatasetInfo, PageData, QueryResult, SourceDescriptor};
 use crate::state::AppState;
-use crate::validation::{
-    validate_parquet_directory, validate_parquet_path, validate_parquet_paths,
-    validate_source_path, validate_sql_query, SourceKind,
-};
+use crate::validation::{validate_source, validate_sql_query};
 use tauri::State;
 
+/// Opens a dataset (file, folder or file list) and returns metadata.
 #[tauri::command(rename_all = "camelCase")]
-pub fn load_parquet_schema(
-    file_path: String,
+pub fn open_dataset(
+    source: SourceDescriptor,
     state: State<'_, AppState>,
-) -> Result<Vec<ColumnInfo>, String> {
-    validate_parquet_path(&file_path).map_err(|e| e.to_string())?;
-
+) -> AppResult<DatasetInfo> {
+    validate_source(&source)?;
     let conn = state.conn.lock();
-    db_logic::get_schema_from_db(&conn, &file_path).map_err(|e| e.to_string())
+    Ok(db_logic::get_dataset_info(&conn, &source)?)
 }
 
+/// Returns a page of dataset data, with optional sorting.
 #[tauri::command(rename_all = "camelCase")]
-pub fn get_page_data(
-    file_path: String,
+pub fn get_page(
+    source: SourceDescriptor,
     page: usize,
     page_size: usize,
     sort_col: Option<String>,
     sort_order: Option<String>,
     state: State<'_, AppState>,
-) -> Result<PageData, String> {
-    validate_parquet_path(&file_path).map_err(|e| e.to_string())?;
-
+) -> AppResult<PageData> {
+    validate_source(&source)?;
     let conn = state.conn.lock();
-    let offset = page * page_size;
 
-    let schema = db_logic::get_schema_from_db(&conn, &file_path).map_err(|e| e.to_string())?;
+    let schema = db_logic::get_schema(&conn, &source)?;
     let col_names: Vec<String> = schema.into_iter().map(|col| col.name).collect();
 
-    db_logic::get_page_data_from_db(
-        &conn, &file_path, col_names, page_size, offset, sort_col, sort_order,
-    )
-    .map_err(|e| e.to_string())
+    Ok(db_logic::get_page(
+        &conn,
+        &source,
+        &col_names,
+        page_size,
+        page * page_size,
+        sort_col.as_deref(),
+        sort_order.as_deref(),
+    )?)
 }
 
-#[tauri::command(rename_all = "camelCase")]
-pub fn get_file_metadata(
-    file_path: String,
-    state: State<'_, AppState>,
-) -> Result<FileMetadata, String> {
-    validate_parquet_path(&file_path).map_err(|e| e.to_string())?;
-
-    let conn = state.conn.lock();
-
-    let schema = db_logic::get_schema_from_db(&conn, &file_path).map_err(|e| e.to_string())?;
-    let total_rows =
-        db_logic::get_row_count_from_db(&conn, &file_path).map_err(|e| e.to_string())?;
-
-    Ok(FileMetadata {
-        file_path,
-        total_rows,
-        schema,
-    })
-}
-
+/// Runs an arbitrary SQL query over the dataset and returns the first page.
 #[tauri::command(rename_all = "camelCase")]
 pub fn run_sql(
-    source_path: String,
+    source: SourceDescriptor,
     query: String,
     page: usize,
     page_size: usize,
-    file_paths: Option<Vec<String>>,
     state: State<'_, AppState>,
-) -> Result<QueryResult, String> {
-    validate_sql_query(&query).map_err(|e| e.to_string())?;
-
-    let source_kind = match file_paths {
-        Some(paths) => validate_parquet_paths(&paths).map_err(|e| e.to_string())?,
-        None => validate_source_path(&source_path).map_err(|e| e.to_string())?,
-    };
-
+) -> AppResult<QueryResult> {
+    validate_source(&source)?;
+    validate_sql_query(&query)?;
     let conn = state.conn.lock();
-    let offset = page * page_size;
-
-    match source_kind {
-        SourceKind::File(path) => {
-            db_logic::exec_custom_query(&conn, &path, &query, page_size, offset)
-        }
-        SourceKind::Directory(path) => {
-            db_logic::exec_multi_file_query(&conn, &path, &query, page_size, offset)
-        }
-        SourceKind::FileList(paths) => {
-            db_logic::exec_file_list_query(&conn, &paths, &query, page_size, offset)
-        }
-    }
-    .map_err(|e| e.to_string())
+    Ok(db_logic::exec_query(&conn, &source, &query, page_size, page * page_size)?)
 }
 
+/// Exports a query result to a file (CSV/JSON/PARQUET).
 #[tauri::command(rename_all = "camelCase")]
-pub fn export_data(
-    source_path: String,
+pub fn export_dataset(
+    source: SourceDescriptor,
     query: String,
     output_path: String,
     format: String,
-    file_paths: Option<Vec<String>>,
     state: State<'_, AppState>,
-) -> Result<(), String> {
-    validate_sql_query(&query).map_err(|e| e.to_string())?;
-
-    let source_kind = match file_paths {
-        Some(paths) => validate_parquet_paths(&paths).map_err(|e| e.to_string())?,
-        None => validate_source_path(&source_path).map_err(|e| e.to_string())?,
-    };
-
+) -> AppResult<()> {
+    validate_source(&source)?;
+    validate_sql_query(&query)?;
     let conn = state.conn.lock();
-
-    match source_kind {
-        SourceKind::File(path) => {
-            db_logic::export_query_to_file(&conn, &path, &query, &output_path, &format)
-        }
-        SourceKind::Directory(path) => {
-            db_logic::export_multi_file_query(&conn, &path, &query, &output_path, &format)
-        }
-        SourceKind::FileList(paths) => {
-            db_logic::export_file_list_query(&conn, &paths, &query, &output_path, &format)
-        }
-    }
-    .map_err(|e| e.to_string())
-}
-
-#[tauri::command(rename_all = "camelCase")]
-pub fn get_multi_file_metadata(
-    directory_path: String,
-    state: State<'_, AppState>,
-) -> Result<MultiFileMetadata, String> {
-    validate_parquet_directory(&directory_path).map_err(|e| e.to_string())?;
-
-    let conn = state.conn.lock();
-    db_logic::get_multi_file_metadata(&conn, &directory_path).map_err(|e| e.to_string())
-}
-
-#[tauri::command(rename_all = "camelCase")]
-pub fn get_file_list_metadata(
-    file_paths: Vec<String>,
-    state: State<'_, AppState>,
-) -> Result<FileListMetadata, String> {
-    validate_parquet_paths(&file_paths).map_err(|e| e.to_string())?;
-
-    let conn = state.conn.lock();
-    db_logic::get_file_list_metadata(&conn, &file_paths).map_err(|e| e.to_string())
-}
-
-#[tauri::command(rename_all = "camelCase")]
-pub fn get_multi_file_page_data(
-    directory_path: String,
-    page: usize,
-    page_size: usize,
-    sort_col: Option<String>,
-    sort_order: Option<String>,
-    state: State<'_, AppState>,
-) -> Result<PageData, String> {
-    validate_parquet_directory(&directory_path).map_err(|e| e.to_string())?;
-
-    let conn = state.conn.lock();
-    let offset = page * page_size;
-
-    let schema =
-        db_logic::get_multi_file_schema(&conn, &directory_path).map_err(|e| e.to_string())?;
-    let col_names: Vec<String> = schema.into_iter().map(|col| col.name).collect();
-
-    db_logic::get_multi_file_page_data(
-        &conn,
-        &directory_path,
-        col_names,
-        page_size,
-        offset,
-        sort_col,
-        sort_order,
-    )
-    .map_err(|e| e.to_string())
+    Ok(db_logic::export_query(&conn, &source, &query, &output_path, &format)?)
 }

@@ -1,14 +1,8 @@
 use crate::error::{AppError, AppResult};
+use crate::models::SourceDescriptor;
 use std::path::Path;
 
 const FORBIDDEN_KEYWORDS: &[&str] = &["DROP", "DELETE", "TRUNCATE", "ALTER", "GRANT", "REVOKE"];
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum SourceKind {
-    File(String),
-    Directory(String),
-    FileList(Vec<String>),
-}
 
 fn validate_path_base(path: &str) -> AppResult<()> {
     if path.is_empty() {
@@ -26,7 +20,7 @@ fn validate_path_base(path: &str) -> AppResult<()> {
     Ok(())
 }
 
-pub fn validate_parquet_path(path: &str) -> AppResult<()> {
+fn validate_parquet_file(path: &str) -> AppResult<()> {
     validate_path_base(path)?;
 
     if !path.to_lowercase().ends_with(".parquet") {
@@ -38,51 +32,31 @@ pub fn validate_parquet_path(path: &str) -> AppResult<()> {
     Ok(())
 }
 
-pub fn validate_parquet_directory(path: &str) -> AppResult<()> {
-    validate_path_base(path)?;
+/// Validates the source at the trust boundary (IPC).
+pub fn validate_source(source: &SourceDescriptor) -> AppResult<()> {
+    match source {
+        SourceDescriptor::File { path } => validate_parquet_file(path),
+        SourceDescriptor::Dir { path } => {
+            validate_path_base(path)?;
 
-    let p = Path::new(path);
-    if !p.is_dir() {
-        return Err(AppError::InvalidPath("Path must be a directory".into()));
-    }
+            if !Path::new(path).is_dir() {
+                return Err(AppError::InvalidPath("Path must be a directory".into()));
+            }
 
-    Ok(())
-}
+            Ok(())
+        }
+        SourceDescriptor::List { paths } => {
+            if paths.is_empty() {
+                return Err(AppError::InvalidPath("File list cannot be empty".into()));
+            }
 
-pub fn validate_source_path(path: &str) -> AppResult<SourceKind> {
-    validate_path_base(path)?;
+            for path in paths {
+                validate_parquet_file(path)?;
+            }
 
-    let p = Path::new(path);
-
-    if p.is_dir() {
-        return Ok(SourceKind::Directory(path.to_string()));
-    }
-
-    if p.is_file() && path.to_lowercase().ends_with(".parquet") {
-        return Ok(SourceKind::File(path.to_string()));
-    }
-
-    Err(AppError::InvalidPath(
-        "Path must be a .parquet file or a directory".into(),
-    ))
-}
-
-pub fn validate_parquet_paths(paths: &[String]) -> AppResult<SourceKind> {
-    if paths.is_empty() {
-        return Err(AppError::InvalidPath("File list cannot be empty".into()));
-    }
-
-    for path in paths {
-        validate_path_base(path)?;
-        if !path.to_lowercase().ends_with(".parquet") {
-            return Err(AppError::InvalidPath(format!(
-                "File '{}' must have .parquet extension",
-                path
-            )));
+            Ok(())
         }
     }
-
-    Ok(SourceKind::FileList(paths.to_vec()))
 }
 
 pub fn validate_sql_query(query: &str) -> AppResult<()> {

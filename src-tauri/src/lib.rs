@@ -17,14 +17,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
-            commands::load_parquet_schema,
-            commands::get_page_data,
-            commands::get_file_metadata,
+            commands::open_dataset,
+            commands::get_page,
             commands::run_sql,
-            commands::export_data,
-            commands::get_multi_file_metadata,
-            commands::get_file_list_metadata,
-            commands::get_multi_file_page_data,
+            commands::export_dataset,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

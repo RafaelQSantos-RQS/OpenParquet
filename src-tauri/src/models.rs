@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Debug, Clone)]
@@ -8,38 +8,37 @@ pub struct ColumnInfo {
     pub type_: String,
 }
 
-#[derive(Serialize, Debug)]
-pub struct FileMetadata {
-    pub file_path: String,
-    pub total_rows: i64,
-    pub schema: Vec<ColumnInfo>,
+/// Data source contract sent by the frontend.
+/// Serializa como `{ "type": "file", "path" } | { "type": "dir", "path" } | { "type": "list", "paths" }`
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum SourceDescriptor {
+    File { path: String },
+    Dir { path: String },
+    List { paths: Vec<String> },
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ParquetFileInfo {
     pub file_name: String,
     pub file_path: String,
     pub row_count: i64,
 }
 
+/// Metadata of an opened dataset (file, folder or file list).
 #[derive(Serialize, Debug)]
-pub struct MultiFileMetadata {
-    pub directory_path: String,
-    pub files: Vec<ParquetFileInfo>,
-    pub total_rows: i64,
+#[serde(rename_all = "camelCase")]
+pub struct DatasetInfo {
     pub schema: Vec<ColumnInfo>,
-}
-
-#[derive(Serialize, Debug)]
-pub struct FileListMetadata {
-    pub files: Vec<ParquetFileInfo>,
     pub total_rows: i64,
-    pub schema: Vec<ColumnInfo>,
+    pub files: Vec<ParquetFileInfo>,
 }
 
 pub type PageData = Vec<HashMap<String, String>>;
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QueryResult {
     pub schema: Vec<ColumnInfo>,
     pub rows: Vec<HashMap<String, String>>,
