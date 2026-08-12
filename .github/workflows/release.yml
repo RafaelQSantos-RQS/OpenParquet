@@ -1,0 +1,90 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest' # Mac Apple Silicon (M1/M2/M3)
+            args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest' # Mac Intel
+            args: '--target x86_64-apple-darwin'
+          - platform: 'ubuntu-22.04' # Linux x64
+            args: ''
+          - platform: 'windows-latest' # Windows x64
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Changelog
+        if: matrix.platform == 'ubuntu-22.04'
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: |
+            {
+              "template": "# OpenParquet {{name}}\n\n## 🚀 O que há de novo\n{{changelog}}",
+              "categories": [
+                {
+                    "title": "## 🌟 Features",
+                    "labels": ["feat", "feature", "enhancement"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bug"]
+                },
+                {
+                    "title": "## 📦 Dependencies",
+                    "labels": ["deps", "chore", "dependencies"]
+                }
+              ]
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: ${{ github.ref_name }}
+          releaseBody: ${{ steps.build_changelog.outputs.changelog || 'Veja os assets abaixo para baixar e instalar.' }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

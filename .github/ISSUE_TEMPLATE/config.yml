@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/rafaelqsantos-rqs/openparquet/discussions
+    about: Por favor, faça perguntas e discuta ideias aqui antes de abrir uma issue.
