@@ -1,240 +1,96 @@
-# AGENTS.md - OpenParquet
+# AGENTS.md — OpenParquet
 
-Coding agent instructions for working in this repository.
+Instructions for code agents working in this repository.
 
-## Project Overview
+## Overview
 
-OpenParquet is a modern Parquet file viewer built with **Tauri v2** (Rust backend) + **Svelte 5** + **TypeScript** frontend. The backend uses **DuckDB** for high-performance Parquet handling and SQL queries.
+OpenParquet is a desktop viewer for **Apache Parquet** files with SQL queries,
+built with **Tauri v2** (Rust backend + DuckDB) and **Vue 3 + Vite + Vuetify 4 + Pinia**
+(no meta-framework). The architecture is backend-first: 4 dataset-centric Tauri commands
+expose all data logic via IPC.
 
----
-
-## Build, Lint & Test Commands
+## Commands
 
 ### Development
 ```bash
-npm run tauri dev          # Start dev server with hot reload
-npm run dev                # Frontend only (Vite dev)
+bun run tauri dev          # Desktop app with hot reload (backend + frontend)
+bun run dev                # Frontend only (Vite, port 1420)
 ```
 
-### Build
+### Build & Verification
 ```bash
-npm run build              # Build frontend only (Vite)
-npm run tauri build        # Build production binary (all platforms)
-make build                 # Same as npm run tauri build
+bun run build              # Frontend: vue-tsc --noEmit + vite build
+cargo clippy -- -D warnings  # Backend: strict Rust lint (warnings = errors)
+bun run tauri build        # Production binary
 ```
 
-### Lint & Type Check
+### Versioning
 ```bash
-npm run check              # Svelte/TypeScript type checking
-npm run check:watch        # Type checking in watch mode
-cargo clippy -- -D warnings  # Rust linting (strict: warnings as errors)
-make check                 # Runs both npm run check and cargo clippy
+npm version patch|minor|major  # SINGLE ACTION — bumps package.json AND Cargo.toml (hooks)
 ```
-
-### Testing
-**No tests currently implemented.** E2E tests are planned (see roadmap in README.md).
-When tests are added, document commands here.
-
----
+`tauri.conf.json` uses `"version": "../package.json"` (single source of truth).
+`preversion/version/postversion` hooks (scripts/sync-version.js) sync
+`src-tauri/Cargo.toml`. The metainfo.xml lists versions manually.
 
 ## Project Structure
 
 ```
-├── src/                    # Svelte frontend
-│   ├── lib/               # Shared utilities & constants
-│   │   ├── constants.ts   # App metadata, social links
-│   │   └── preferences.ts # Theme & recent files (Tauri Store)
-│   ├── routes/
-│   │   ├── +page.svelte   # Main application page
-│   │   ├── +layout.ts     # SSR disabled (export const ssr = false)
-│   │   ├── page.css       # Main styles
-│   │   └── components/    # UI components (one folder per component)
-│   └── app.html           # HTML template
-├── src-tauri/             # Rust backend
-│   └── src/
-│       ├── lib.rs         # Tauri app setup, plugin registration
-│       ├── main.rs        # Entry point
-│       ├── commands.rs    # Tauri IPC commands (invoked from frontend)
-│       ├── db_logic.rs    # DuckDB operations
-│       └── models.rs      # Data structures (ColumnInfo, PageData, etc.)
-├── static/                # Static assets
-├── package.json           # npm scripts & frontend dependencies
-├── Makefile               # Convenient command shortcuts
-└── tsconfig.json          # TypeScript config (strict mode enabled)
+├── src/                     # Vue 3 frontend (script setup + Composition API, strict TS)
+│   ├── main.ts             # Bootstrap: Pinia + Vuetify (dark-only theme) + @mdi/font
+│   ├── App.vue             # Shell: workspace, sidebar (Recent Files), main area
+│   ├── components/         # UI: Titlebar, AppLayout, DataTable, MetadataPanel,
+│   │                       #     SqlModal, ExportModal, AboutModal, RecentFiles
+│   ├── composables/        # useDataset (dataset state/actions), useDragDrop
+│   ├── stores/             # Pinia: ui, recents (+ preferences via plugin-store)
+│   └── types.ts            # TS contract of the backend (camelCase)
+├── src-tauri/              # Rust/Tauri v2 backend
+│   ├── src/
+│   │   ├── lib.rs          # Builder: plugins (store/opener/dialog) + invoke_handler
+│   │   ├── commands.rs     # 4 IPC commands (open_dataset, get_page, run_sql, export_dataset)
+│   │   ├── db_logic.rs     # DuckDB: schema, pages, queries, export (value formatting)
+│   │   ├── models.rs       # Serializable structs (serde camelCase)
+│   │   ├── validation.rs   # Validation at the trust boundary (paths, forbidden SQL)
+│   │   ├── error.rs        # AppError (thiserror + Serialize) — becomes a string on the frontend
+│   │   └── state.rs        # AppState: Mutex<duckdb::Connection>
+│   └── tauri.conf.json     # decorations:false, version: ../package.json
+├── scripts/sync-version.js # Hook syncing Cargo.toml ↔ package.json
+└── .tmp/old_code/          # Backup of the old project (Svelte) — reference only
 ```
 
----
+## API Architecture (contract — DO NOT break)
 
-## Code Style Guidelines
+4 dataset-centric commands, receiving and returning **camelCase** (serde rename_all):
 
-### General
+| Command | Args | Returns |
+|---|---|---|
+| `open_dataset` | `source` | `DatasetInfo { schema, totalRows, files }` |
+| `get_page` | `source, page, pageSize, sortCol?, sortOrder?` | `PageData` (rows) |
+| `run_sql` | `source, query, page, pageSize` | `QueryResult { schema, rows, executionTimeMs, totalRows }` |
+| `export_dataset` | `source, query, outputPath, format` | `()` |
 
-- **Language**: Comments in Portuguese (matches existing codebase).
-- **No unnecessary comments** in code - write self-documenting code.
-- **Conventional Commits**: Use prefixes like `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`.
+`source` is a `SourceDescriptor` tagged union:
+`{ type: 'file', path } | { type: 'dir', path } | { type: 'list', paths }`.
 
----
+Rules:
+- Commands return `AppResult<T>` (AppError implements Serialize — becomes an error string on the frontend, shown via snackbar).
+- Path and query validation on the backend (validation.rs): absolute paths, `.parquet`, no `DROP/DELETE/TRUNCATE/ALTER/GRANT/REVOKE`.
+- Do not create new commands keyed by path (file_path, directory_path...) — use `SourceDescriptor`.
+- The frontend consumes data via `useDataset()` (single composable) — do not create parallel data stores.
 
-### Frontend (TypeScript / Svelte)
+## Code Style
 
-#### Imports
-```typescript
-// 1. External packages first (alphabetically)
-import { invoke } from "@tauri-apps/api/core";
-import { onMount } from "svelte";
+- **Comments in English** (consistent with the current code); no obvious comments.
+- **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`.
+- **Frontend**: `<script setup lang="ts">`, Composition API, presentational components
+  receive state via props and emit events; data logic lives in `useDataset`.
+- **Backend**: small pure functions in `db_logic`, validation in `validation`,
+  no `.map_err` boilerplate (use `?` with AppError `#[from]`).
+- **Vuetify 4 patterns**: components auto-imported via `vite-plugin-vuetify`
+  (no manual imports), `<v-app>` as root in App.vue, **dark-only theme** (no theme store),
+  CSS vars `rgb(var(--v-theme-*))` / `rgba(var(--v-border-color), var(--v-border-opacity))`.
 
-// 2. Internal aliases ($lib)
-import { APP_INFO } from "$lib/constants";
+## Testing
 
-// 3. Relative imports (components)
-import Titlebar from "./components/Titlebar/Titlebar.svelte";
-```
-
-#### Naming Conventions
-- **Variables/Functions**: `camelCase` (e.g., `loadParquetFile`, `sortOrder`)
-- **Components/Types/Interfaces**: `PascalCase` (e.g., `ColumnInfo`, `FileMetadata`)
-- **Constants**: `SCREAMING_SNAKE_CASE` for true constants, `camelCase` for config objects
-- **Files**: `PascalCase.svelte` for components, `camelCase.ts` for utilities
-
-#### TypeScript
-- **Strict mode enabled** - no `any` unless absolutely necessary.
-- Use **type annotations** for function parameters and return types.
-- Prefer `interface` for object shapes, `type` for unions/primitives.
-- Use `as` casts sparingly; prefer type guards.
-
-```typescript
-// Good
-interface FileMetadata {
-  file_path: string;
-  total_rows: number;
-  schema: ColumnInfo[];
-}
-
-// Export types from module context for reuse
-<script context="module" lang="ts">
-  export type ColumnInfo = { name: string; type: string };
-</script>
-```
-
-#### Svelte Components
-- One component per folder with matching CSS file: `ComponentName/ComponentName.svelte`
-- Use `<script lang="ts">` for TypeScript.
-- Export props with defaults:
-  ```svelte
-  <script lang="ts">
-    export let schema: ColumnInfo[] = [];
-    export let onsort: (col: string) => void = () => {};
-  </script>
-  ```
-- Component styles: separate CSS file via `<style src="./ComponentName.css">`
-
-#### Error Handling
-```typescript
-try {
-  const result = await invoke<QueryResult>("run_sql", { ... });
-  // handle success
-} catch (e) {
-  console.error("Erro na query:", e);
-  errorMsg = `Erro na query: ${e}`;
-}
-```
-
----
-
-### Backend (Rust)
-
-#### Naming Conventions
-- **Functions/Variables**: `snake_case` (e.g., `get_schema_from_db`, `file_path`)
-- **Structs/Enums/Traits**: `PascalCase` (e.g., `ColumnInfo`, `QueryResult`)
-- **Constants**: `SCREAMING_SNAKE_CASE`
-
-#### Tauri Commands
-- Use `#[tauri::command(rename_all = "camelCase")]` for JS-compatible naming.
-- Return `Result<T, String>` for error handling.
-- Use async for commands that do I/O:
-
-```rust
-#[tauri::command(rename_all = "camelCase")]
-pub async fn get_file_metadata(file_path: String) -> Result<FileMetadata, String> {
-    // ...
-}
-```
-
-#### Error Handling Pattern
-```rust
-fn db_err(e: duckdb::Error) -> String {
-    e.to_string()
-}
-
-// Usage: convert library errors to String
-let conn = Connection::open_in_memory().map_err(db_err)?;
-```
-
-#### Structs & Serialization
-```rust
-use serde::Serialize;
-
-#[derive(Serialize, Debug, Clone)]
-pub struct ColumnInfo {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: String,  // Avoid reserved keyword
-}
-```
-
-#### Modules
-- Keep related functionality together.
-- `commands.rs` - Tauri IPC handlers.
-- `db_logic.rs` - Database operations (pure functions, no Tauri dependency).
-- `models.rs` - Data structures only.
-
----
-
-## Git Workflow
-
-### Commit Messages
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-```
-feat: adicionar filtro de colunas
-fix: corrigir erro de drag and drop
-refactor: extrair lógica de exportação para db_logic
-docs: atualizar roadmap
-chore: atualizar dependências
-```
-
-### Branches
-- Use descriptive names: `feat/sql-mode`, `fix/pagination-bug`, `refactor/export-logic`
-
----
-
-## Key Dependencies
-
-### Frontend
-- **@tauri-apps/api** - Core Tauri APIs (`invoke`, event system)
-- **@tauri-apps/plugin-dialog** - File open/save dialogs
-- **@tauri-apps/plugin-store** - Persistent preferences
-- **svelte** / **@sveltejs/kit** - UI framework
-
-### Backend
-- **tauri** - Desktop app framework
-- **duckdb** - Embedded SQL database with Parquet support
-- **serde / serde_json** - Serialization
-- **chrono** - Date/time handling
-
----
-
-## Common Tasks
-
-### Adding a new Tauri command
-1. Define the function in `src-tauri/src/commands.rs` with `#[tauri::command]`
-2. Register it in `src-tauri/src/lib.rs` inside `invoke_handler![]`
-3. Call from frontend: `await invoke("command_name", { arg1: value })`
-
-### Adding a new UI component
-1. Create folder: `src/routes/components/ComponentName/`
-2. Add `ComponentName.svelte` and `ComponentName.css`
-3. Import and use in parent component
-
-### Adding a preference
-1. Add getter/setter in `src/lib/preferences.ts`
-2. Use `LazyStore` from `@tauri-apps/plugin-store`
+No automated test suite. Validation = `bun run build` (strict vue-tsc)
++ `cargo clippy -- -D warnings` + manual testing with `bun run tauri dev`
+(E2E criteria in `.tmp/context/refactor-vue-tauri.md`).

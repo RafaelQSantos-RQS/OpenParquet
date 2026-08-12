@@ -1,108 +1,61 @@
 # OpenParquet
 
-![License](https://img.shields.io/github/license/rafaelqsantos-rqs/openparquet?style=flat-square)
-![Version](https://img.shields.io/github/v/release/rafaelqsantos-rqs/openparquet?style=flat-square)
-![Build Status](https://img.shields.io/github/actions/workflow/status/rafaelqsantos-rqs/openparquet/release.yml?style=flat-square)
+A modern, high-performance desktop viewer for **Apache Parquet** files with SQL
+queries, built with Tauri v2 (Rust + DuckDB) and Vue 3 + Vuetify.
 
-**OpenParquet** é um visualizador de arquivos Apache Parquet moderno, rápido e elegante. Construído para desenvolvedores e analistas de dados que precisam inspecionar grandes volumes de dados sem a sobrecarga de ferramentas pesadas.
+## Features
 
-<p align="center">
-  <img src="./static/app-icon.png" width="128" height="128" alt="OpenParquet Icon" />
-</p>
+- Open a single Parquet file, an entire folder, or multiple files at once
+- Paginated table view with sortable columns and type hints
+- **SQL mode**: query the opened dataset directly with DuckDB
+- Export data to **CSV, JSON or Parquet** (full table or current query result)
+- File metadata panel (schema, row count, file list)
+- Recent files sidebar
+- Dark-only theme, custom title bar with in-window actions
+- Drag & drop files/folders to open
 
-## 🚀 Funcionalidades Atuais
+## Tech Stack
 
-* **Alta Performance:** Backend em **Rust** com motor **DuckDB**.
-* **Interface Moderna:** UI limpa em **Svelte** com Dark Mode.
-* **Drag & Drop:** Arraste seus arquivos `.parquet` para abrir.
-* **Paginação Eficiente:** Navegue por milhões de linhas.
-* **Metadados Detalhados:** Schema e tipos de colunas.
-* **Multiplataforma:** Windows, macOS e Linux.
+| Layer | Tech |
+|---|---|
+| Frontend | Vue 3, Vite, Vuetify 4, Pinia, TypeScript (strict) |
+| Backend | Tauri v2, Rust, DuckDB |
+| Package manager | [Bun](https://bun.sh) |
 
-## 📸 Screenshots
+## Getting Started
 
-<table align="center">
-  <tr>
-    <td align="center">
-      <img src="./screenshots/main.png" alt="OpenParquet Main Screen" width="100%" />
-      <br>
-      <em>Tela principal</em>
-    </td>
-    <td align="center">
-      <img src="./screenshots/data-table.png" alt="OpenParquet Data Table" width="100%" />
-      <br>
-      <em>Tabela de dados</em>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="./screenshots/executar-consulta-sql.png" alt="OpenParquet SQL Query" width="100%" />
-      <br>
-      <em>Consultas SQL</em>
-    </td>
-    <td align="center">
-      <img src="./screenshots/exporta-dados.png" alt="OpenParquet Export Data" width="100%" />
-      <br>
-      <em>Exportação de dados</em>
-    </td>
-  </tr>
-</table>
+```bash
+bun install
+bun run tauri dev   # Desktop app with hot reload (backend + frontend)
+```
 
+Frontend only (Vite dev server on port 1420):
 
+```bash
+bun run dev
+```
 
-## 🗺️ Roadmap (To-Do)
+## Build & Validation
 
-Estamos trabalhando ativamente para tornar o OpenParquet a ferramenta definitiva. Aqui está o que vem por aí:
+```bash
+bun run build               # Frontend: vue-tsc --noEmit + vite build
+cargo clippy -- -D warnings # Backend: strict Rust lint (warnings = errors)
+bun run tauri build         # Production binary
+```
 
-- [x] **Ordenação de Colunas:** Ordenação nativa via SQL ao clicar no cabeçalho.
-- [x] **Preferências:** Salvar tema (Dark/Light) e tamanho da janela entre sessões.
-- [x] **Histórico:** Lista de arquivos abertos recentemente na tela inicial.
-- [x] **Modo SQL:** Interface para rodar queries SQL personalizadas nos dados carregados.
-- [ ] **Filtros Rápidos:** Barra de busca global e filtros por coluna.
-- [x] **Exportação:** Exportar visualização atual para CSV ou JSON.
-- [ ] **Abrir Pasta:** Carregar múltiplos arquivos Parquet de uma pasta como uma única tabela.
-- [ ] **Testes E2E:** Implementar testes automatizados de interface.
+## Project Structure
 
-> Quer ajudar a implementar alguma dessas features? Confira nosso [Guia de Contribuição](CONTRIBUTING.md)!
+```
+src/            # Vue 3 frontend (components, composables, Pinia stores)
+src-tauri/      # Rust/Tauri v2 backend (IPC commands, DuckDB logic, validation)
+scripts/        # version sync hook (Cargo.toml ↔ package.json)
+```
 
-## 🛠️ Tech Stack
+The backend exposes 4 dataset-centric commands via IPC
+(`open_dataset`, `get_page`, `run_sql`, `export_dataset`) — see
+[AGENTS.md](./AGENTS.md) for the full contract.
 
-* **[Tauri v2](https://tauri.app/):** Framework para apps minúsculos e seguros.
-* **[Rust](https://www.rust-lang.org/):** Lógica de backend.
-* **[DuckDB](https://duckdb.org/):** Motor SQL embutido.
-* **[Svelte](https://svelte.dev/):** Frontend reativo.
-* **[TypeScript](https://www.typescriptlang.org/):** Tipagem estática.
+## Versioning
 
-## 📦 Instalação
-
-Acesse a aba de **[Releases](https://github.com/rafaelqsantos-rqs/openparquet/releases)** para baixar a última versão.
-
-## 🧑‍💻 Desenvolvimento
-
-1.  Clone o repositório:
-    ```bash
-    git clone [https://github.com/rafaelqsantos-rqs/openparquet.git](https://github.com/rafaelqsantos-rqs/openparquet.git)
-    cd openparquet
-    ```
-
-2.  Instale as dependências:
-    ```bash
-    npm install
-    ```
-
-3.  Rode em modo de desenvolvimento:
-    ```bash
-    npm run tauri dev
-    ```
-
-## 🤝 Contribuindo
-
-Contribuições são muito bem-vindas! Veja o arquivo [CONTRIBUTING.md](CONTRIBUTING.md) para saber como começar.
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
----
-
-Desenvolvido com 💚 por **[Rafael Santos](https://github.com/rafaelqsantos-rqs)**.
+`npm version patch|minor|major` bumps both `package.json` and
+`src-tauri/Cargo.toml` in a single action (via git hooks).
