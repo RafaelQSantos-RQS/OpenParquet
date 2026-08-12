@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.rafaelqsantos.openparquet</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>OpenParquet</name>
+  <summary>Visualizador de arquivos Parquet</summary>
+  <description>
+    <p>Aplicativo desktop para visualizar arquivos Apache Parquet, explorar schemas,
+       paginar dados, executar consultas SQL e exportar resultados.</p>
+  </description>
+  <releases>
+    <release version="0.1.0" date="2026-08-05"/>
+  </releases>
+</component>

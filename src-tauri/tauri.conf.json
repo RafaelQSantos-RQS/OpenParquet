@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "openparquet",
-  "version": "0.2.0",
-  "identifier": "com.rafaelqsantos.openparquet",
+  "version": "../package.json",
+  "identifier": "dev.rafaelqsantos.openparquet",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../build"
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
@@ -15,11 +15,7 @@
         "title": "openparquet",
         "width": 800,
         "height": 600,
-        "decorations": false,
-        "transparent": false,
-        "center": true,
-        "maximized": true,
-        "fullscreen": false
+        "decorations": false
       }
     ],
     "security": {
@@ -35,30 +31,6 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ],
-    "shortDescription": "Visualizador desktop de arquivos Parquet.",
-    "longDescription": "OpenParquet é uma ferramenta moderna para visualizar, filtrar e analisar arquivos Apache Parquet. Construído com Rust e DuckDB para velocidade máxima, permite abrir arquivos gigantes instantaneamente.",
-    "copyright": "Copyright © 2025 Rafael Santos",
-    "category": "Development",
-    "linux": {
-      "appimage": {
-        "bundleMediaFramework": true,
-        "files": {}
-      },
-      "deb": {
-        "depends": [
-          "libwebkit2gtk-4.1-0",
-          "libappindicator3-1"
-        ],
-        "files": {
-          "/usr/share/metainfo/com.rafaelqsantos.openparquet.metainfo.xml": "linux/com.rafaelqsantos.openparquet.metainfo.xml"
-        }
-      },
-      "rpm": {
-        "epoch": 0,
-        "files": {},
-        "release": "1"
-      }
-    }
+    ]
   }
 }
