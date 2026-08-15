@@ -14,10 +14,4 @@ export const APP_INFO = {
     linkedin: "https://www.linkedin.com/in/rafael-queiroz-santos",
     email: "mailto:rafaelqsantos33@gmail.com",
   },
-  attribution: {
-    storyset: {
-      text: "Data illustrations by Storyset",
-      url: "https://storyset.com/data",
-    },
-  },
 };

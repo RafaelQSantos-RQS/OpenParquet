@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // About modal replicating the old_code about-content: logo, repo link,
-// author, stack, social links and attribution (opens URLs via plugin-opener).
+// author, stack and social links (opens URLs via plugin-opener).
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { APP_INFO } from "../constants";
 import AppModal from "./AppModal.vue";
@@ -17,7 +17,7 @@ function openExternal(url: string): void {
   <AppModal v-if="ui.showAbout" :title="`About ${APP_INFO.name}`" @close="ui.closeAbout">
     <div class="about-content">
       <div class="about-main">
-        <img src="/welcome.svg" alt="Logo" class="about-logo" />
+        <img src="/app-icon.png" alt="Logo" class="about-logo" />
         <p class="about-name">
           {{ APP_INFO.name }}
           <span class="about-version">{{ APP_INFO.version }}</span>
@@ -61,14 +61,6 @@ function openExternal(url: string): void {
             <i class="mdi mdi-email-outline" />
           </a>
         </div>
-
-        <a
-          class="attribution"
-          href="#"
-          @click.prevent="openExternal(APP_INFO.attribution.storyset.url)"
-        >
-          {{ APP_INFO.attribution.storyset.text }}
-        </a>
       </div>
     </div>
   </AppModal>
@@ -183,20 +175,6 @@ function openExternal(url: string): void {
 }
 
 .repo-link:hover {
-  text-decoration: underline;
-}
-
-.attribution {
-  font-size: 0.7rem;
-  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
-  text-decoration: none;
-  opacity: 0.5;
-  display: block;
-  cursor: pointer;
-}
-
-.attribution:hover {
-  opacity: 1;
   text-decoration: underline;
 }
 </style>
