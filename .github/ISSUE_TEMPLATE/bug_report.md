@@ -1,30 +1,30 @@
 ---
-name: 🐛 Relatar um Bug
-about: Crie um relatório para nos ajudar a melhorar o OpenParquet
+name: 🐛 Bug Report
+about: Create a report to help us improve OpenParquet
 title: "[BUG] "
 labels: bug
 assignees: ''
 ---
 
-**Descreva o bug**
-Uma descrição clara e concisa do que é o bug.
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-**Para Reproduzir**
-Passos para reproduzir o comportamento:
-1. Abra o arquivo '...'
-2. Clique em '...'
-3. Role para baixo até '...'
-4. Veja o erro
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Open the file '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
 
-**Comportamento esperado**
-Uma descrição clara e concisa do que você esperava que acontecesse.
+**Expected behavior**
+A clear and concise description of what you expected to happen.
 
 **Screenshots**
-Se aplicável, adicione screenshots para ajudar a explicar seu problema.
+If applicable, add screenshots to help explain your problem.
 
-**Ambiente (por favor, complete as seguintes informações):**
- - SO: [ex: Windows 11, Ubuntu 22.04, macOS Ventura]
- - Versão do App: [ex: v0.1.0]
+**Environment (please complete the following information):**
+ - OS: [e.g. Windows 11, Ubuntu 22.04, macOS Ventura]
+ - App version: [e.g. v1.0.0]
 
-**Contexto Adicional**
-Adicione qualquer outro contexto sobre o problema aqui.
+**Additional context**
+Add any other context about the problem here.
