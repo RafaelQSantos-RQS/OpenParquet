@@ -5,6 +5,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release:
     permissions:
@@ -25,7 +29,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0 
 
@@ -54,11 +58,11 @@ jobs:
       - name: Build Changelog
         if: matrix.platform == 'ubuntu-22.04'
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v4
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           configuration: |
             {
-              "template": "# OpenParquet {{name}}\n\n## 🚀 O que há de novo\n{{changelog}}",
+              "template": "# OpenParquet {{name}}\n\n## 🚀 What's new\n{{changelog}}",
               "categories": [
                 {
                     "title": "## 🌟 Features",
@@ -84,7 +88,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
-          releaseBody: ${{ steps.build_changelog.outputs.changelog || 'Veja os assets abaixo para baixar e instalar.' }}
+          releaseBody: ${{ steps.build_changelog.outputs.changelog || 'See the assets below to download and install.' }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
