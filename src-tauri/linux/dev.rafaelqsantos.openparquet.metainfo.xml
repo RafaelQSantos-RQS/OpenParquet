@@ -10,6 +10,7 @@
        paginating data, running SQL queries and exporting results.</p>
   </description>
   <releases>
+    <release version="1.1.0" date="2026-08-15"/>
     <release version="1.0.0" date="2026-08-12"/>
   </releases>
 </component>
