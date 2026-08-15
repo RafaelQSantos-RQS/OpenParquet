@@ -6,19 +6,18 @@ on:
   push:
     branches: [ "main" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  check-quality:
+  frontend-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install Linux Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev libssl-dev
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -29,9 +28,31 @@ jobs:
       - name: Typecheck + Build (Vue/Vite)
         run: bun run build
 
+  backend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev libssl-dev
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
 
       - name: Check Rust Code (Clippy)
         working-directory: ./src-tauri
         run: cargo clippy -- -D warnings
+
+  # Aggregator: keeps the "check-quality" context required by the branch ruleset
+  check-quality:
+    needs: [frontend-check, backend-check]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All checks passed"
